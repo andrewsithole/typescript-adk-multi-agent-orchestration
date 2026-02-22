@@ -83,7 +83,7 @@ When a user calls `GET /api/run/stream`, the following sequence happens:
 
 ---
 
-## 💡 Concepts for Junior Engineers
+## 💡 Interesting Concepts for newcomers
 
 ### What is SSE (Server-Sent Events)?
 Unlike a normal request where you ask a question and wait for one answer, SSE is like a one-way radio. You tune in (open the connection), and the server broadcasts messages to you as they happen. This is why you see the AI's response appear word-by-word or step-by-step.
