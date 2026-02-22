@@ -54,9 +54,9 @@ When a user calls `GET /api/run/stream`, the following sequence happens:
 - **Middleware**: The request passes through `cors` (to allow browser access) and `express.json()`.
 - **Validation**: The server uses **Zod** to check if `userId`, `sessionId`, and `q` (the question) are present and valid. If they aren't, it immediately returns a `400 Bad Request` error.
 
-### 2. Session Preparation
+### 2. Session Validation (Strict)
 - The server checks if a session already exists for that `userId` and `sessionId`.
-- If it doesn't exist, it automatically creates one in memory.
+- **Blocking**: If the session does not exist, the server returns a `404 Not Found` error. This ensures that a session must be explicitly initialized via `POST /api/sessions` before chatting can begin (a production-standard pattern).
 
 ### 3. SSE Setup
 - The server sets specific HTTP headers to tell the browser: *"Keep this connection open, I'm going to send you multiple messages over time."*
@@ -91,7 +91,10 @@ Unlike a normal request where you ask a question and wait for one answer, SSE is
 ### What is "In-Memory" Session Service?
 Currently, sessions are stored in the server's RAM (`InMemorySessionService`). 
 - **Pros**: Very fast.
-- **Cons**: If the server restarts, all sessions are lost. In a real production environment, we would likely swap this for a database like Redis or PostgreSQL.
+- **Cons**: If the server restarts, all sessions are lost. 
+
+**Why strict session validation?** 
+Previously, we auto-created sessions on the fly. We've switched to a **Strict Validation** pattern, where a session *must* be created via `POST /api/sessions` first. This is a common production pattern that ensures the client and server are always "in sync" and prevents accidental "ghost sessions" from being created by malformed requests.
 
 ### Why Zod?
 We use Zod for "Type Safety at the Edge." Even though we use TypeScript, TypeScript only checks our code at compile time. Zod checks the *actual data* coming from the outside world (the user's request) at runtime to make sure it won't crash our app.

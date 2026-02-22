@@ -81,10 +81,10 @@ app.get('/api/run/stream', async (req, res) => {
     // eslint-disable-next-line no-console
     console.log(`[${reqId}] stream start`, { userId, sessionId });
 
-    // Ensure a session exists
+    // Ensure a session exists (Strict production pattern)
     const existing = await sessionService.getSession({ appName, userId, sessionId });
     if (!existing) {
-      await sessionService.createSession({ appName, userId, sessionId });
+      return sendError(res, 404, 'session_not_found', `Session ${sessionId} not found for user ${userId}. Please create a session first via POST /api/sessions.`, reqId);
     }
 
     const runner = new Runner({ appName, agent: courseCreator, sessionService });
