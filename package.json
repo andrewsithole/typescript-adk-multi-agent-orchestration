@@ -9,6 +9,7 @@
     "build:core": "npm --prefix packages/core run build",
     "build:api": "npm run build:core && npm --prefix apps/api run build",
     "start:api": "npm --prefix apps/api run start",
+    "start:web": "npm --prefix apps/web run dev",
     "dev:web": "npm --prefix apps/web run dev",
     "build:web": "npm --prefix apps/web run build",
     "preview:web": "npm --prefix apps/web run preview"
