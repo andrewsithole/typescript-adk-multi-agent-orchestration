@@ -1,4 +1,3 @@
-// judge.ts
 import { LlmAgent, zodObjectToSchema } from '@google/adk';
 import { z } from 'zod';
 

@@ -6,13 +6,8 @@ import express from 'express';
 import cors from 'cors';
 import { Runner, InMemorySessionService, stringifyContent, getFunctionCalls, getFunctionResponses } from '@google/adk';
 
-// Import the orchestrated agent from the existing codebase.
-// Using NodeNext, we need explicit .js extensions in TS source.
-// We rely on ts-node/esm in dev to transpile TS on the fly.
-// If you later build to JS, update this import to point to the built file.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import { courseCreator } from '../../agents/orchestrator.js';
+// Import the orchestrated agent from the compiled core package.
+import { courseCreator } from '../../../packages/core/dist/orchestrator.js';
 
 import { SessionCreateBody, RunStreamQuery } from './schemas.js';
 import { randomUUID } from 'node:crypto';

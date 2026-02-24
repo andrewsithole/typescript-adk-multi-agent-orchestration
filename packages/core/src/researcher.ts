@@ -1,4 +1,3 @@
-// researcher.ts
 import { LlmAgent, GOOGLE_SEARCH } from '@google/adk';
 
 export const researcher = new LlmAgent({
