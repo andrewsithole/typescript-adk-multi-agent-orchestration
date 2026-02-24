@@ -14,7 +14,7 @@ export function App() {
   // @ts-ignore
   const [apiBase, setApiBase] = useState<string>((import.meta.env.VITE_API_BASE as string) || 'http://localhost:3000')
   const [userId, setUserId] = useState('user-1')
-  const [sessionId, setSessionId] = useState('session-1')
+  const [sessionId, setSessionId] = useState('')
   const [query, setQuery] = useState('Create a course on the history of Coffee.')
   const [model, setModel] = useState('gemini-2.5-flash')
   const [maxIterations, setMaxIterations] = useState(3)
@@ -31,10 +31,33 @@ export function App() {
     }
   }, [lines, autoScroll])
 
+  const createNewSession = useCallback(async () => {
+    const newId = Math.random().toString(36).substring(7);
+    try {
+      const resp = await fetch(`${apiBase}/api/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, sessionId: newId })
+      });
+      if (!resp.ok) throw new Error('Failed to create session');
+      setSessionId(newId);
+      setLines([`--- New Session Created: ${newId} ---`]);
+    } catch (err) {
+      alert((err as Error).message);
+    }
+  }, [apiBase, userId]);
+
+  // Create initial session if none exists
+  useEffect(() => {
+    if (!sessionId) {
+      createNewSession();
+    }
+  }, [sessionId, createNewSession]);
+
   const validate = () => {
     if (!apiBase.trim()) return 'API Base is required'
     if (!userId.trim() || userId.length > 128) return 'User ID must be 1-128 chars'
-    if (!sessionId.trim() || sessionId.length > 128) return 'Session ID must be 1-128 chars'
+    if (!sessionId.trim()) return 'Session not initialized'
     if (!query.trim() || query.length > 2000) return 'Query must be 1-2000 chars'
     return null
   }
@@ -147,13 +170,21 @@ export function App() {
     <div style={containerStyle}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: '24px' }}>Agentic Course Creator</h1>
-        <div style={{ fontSize: '12px', color: '#666' }}>
-          {isLoading ? '● Streaming...' : '○ Ready'}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button 
+            style={{ padding: '6px 12px', borderRadius: '4px', border: 'none', background: '#28a745', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
+            onClick={createNewSession}
+          >
+            + New Session
+          </button>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            {isLoading ? '● Streaming...' : '○ Ready'}
+          </div>
         </div>
       </header>
 
       <section style={controlGridStyle}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold' }}>API Base</span>
             <input style={inputStyle} value={apiBase} onChange={(e) => setApiBase(e.target.value)} />
@@ -161,21 +192,6 @@ export function App() {
           <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold' }}>User ID</span>
             <input style={inputStyle} value={userId} onChange={(e) => setUserId(e.target.value)} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Session ID</span>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              <input style={{ ...inputStyle, flex: 1 }} value={sessionId} onChange={(e) => setSessionId(e.target.value)} />
-              <button 
-                style={{ padding: '0 8px', fontSize: '10px', cursor: 'pointer', borderRadius: '4px', border: '1px solid #ccc' }}
-                onClick={() => {
-                  setSessionId(Math.random().toString(36).substring(7));
-                  setLines([]);
-                }}
-              >
-                New
-              </button>
-            </div>
           </label>
         </div>
 
@@ -210,7 +226,7 @@ export function App() {
             <button 
               style={{ padding: '8px 20px', borderRadius: '4px', border: 'none', background: '#007bff', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
               onClick={start}
-              disabled={isLoading}
+              disabled={isLoading || !sessionId}
             >
               Run Pipeline
             </button>
