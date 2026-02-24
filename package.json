@@ -6,8 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev:cli": "node --loader ts-node/esm index.ts",
-    "dev:api": "npm --prefix apps/api run dev",
-    "build:api": "npm --prefix apps/api run build",
+    "build:core": "npm --prefix packages/core run build",
+    "build:api": "npm run build:core && npm --prefix apps/api run build",
     "start:api": "npm --prefix apps/api run start",
     "dev:web": "npm --prefix apps/web run dev",
     "build:web": "npm --prefix apps/web run build",
@@ -17,6 +17,7 @@
   "private": true,
   "dependencies": {
     "@google/adk": "^0.3.0",
+    "@local/core": "file:./packages/core",
     "dotenv": "^17.3.1",
     "zod": "^4.3.6"
   },

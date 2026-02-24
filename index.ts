@@ -1,7 +1,7 @@
 // index.ts
 import 'dotenv/config';
 import { Runner, InMemorySessionService, stringifyContent, getFunctionCalls, getFunctionResponses } from '@google/adk';
-import { courseCreator } from './apps/agents/orchestrator.js';
+import { courseCreator } from '@local/core';
 
 async function main() {
     const appName = 'ts-multi-agents';
