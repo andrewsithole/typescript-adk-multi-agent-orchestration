@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.ts",
   "scripts": {
+    "dev:api": "npm --prefix apps/api run dev",
     "build:api": "npm --prefix apps/api run build",
     "start:api": "npm --prefix apps/api run start",
     "start:web": "npm --prefix apps/web run dev",
