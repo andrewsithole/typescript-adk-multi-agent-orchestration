@@ -6,8 +6,8 @@ import express from 'express';
 import cors from 'cors';
 import { Runner, InMemorySessionService, stringifyContent, getFunctionCalls, getFunctionResponses } from '@google/adk';
 
-// Import the orchestrated agent from the compiled core package.
-import { courseCreator } from '../../../packages/core/dist/orchestrator.js';
+// Import the orchestrated agent colocated with the API.
+import { courseCreator } from './agents/orchestrator.js';
 
 import { SessionCreateBody, RunStreamQuery } from './schemas.js';
 import { randomUUID } from 'node:crypto';

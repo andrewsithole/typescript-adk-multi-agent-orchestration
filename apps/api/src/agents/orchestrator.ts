@@ -51,3 +51,4 @@ export const courseCreator = new SequentialAgent({
     description: 'Researches and builds a course.',
     subAgents: [researchLoop], // You would add a ContentBuilder agent here next
 });
+

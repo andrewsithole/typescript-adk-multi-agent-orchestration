@@ -18,3 +18,4 @@ export const judge = new LlmAgent({
     disallowTransferToParent: true,
     disallowTransferToPeers: true,
 });
+
