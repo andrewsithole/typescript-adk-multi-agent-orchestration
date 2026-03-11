@@ -1,4 +1,5 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react'
+import Markdown from 'react-markdown'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -211,6 +212,32 @@ function EventRow({ event }: { event: ActivityEvent }) {
   }
 }
 
+function MarkdownOutput({ text }: { text: string }) {
+  return (
+    <div style={{ fontSize: 15, lineHeight: 1.8, color: C.text, wordBreak: 'break-word' }}>
+      <style>{`
+        .md h1 { font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.02em; color: ${C.text}; }
+        .md h2 { font-size: 18px; font-weight: 600; margin: 28px 0 10px; color: ${C.text}; }
+        .md h3 { font-size: 15px; font-weight: 600; margin: 20px 0 8px; color: ${C.text}; }
+        .md p  { margin: 0 0 12px; color: ${C.textSub}; }
+        .md ul, .md ol { margin: 0 0 12px; padding-left: 20px; color: ${C.textSub}; }
+        .md li { margin-bottom: 4px; }
+        .md strong { color: ${C.text}; font-weight: 600; }
+        .md code { font-family: monospace; font-size: 13px; background: ${C.surfaceAlt}; border: 1px solid ${C.border}; border-radius: 4px; padding: 1px 5px; color: ${C.accentText}; }
+        .md pre  { background: ${C.surfaceAlt}; border: 1px solid ${C.border}; border-radius: 8px; padding: 14px 16px; overflow-x: auto; margin: 0 0 16px; }
+        .md pre code { background: none; border: none; padding: 0; color: ${C.text}; font-size: 13px; }
+        .md blockquote { border-left: 3px solid ${C.border}; margin: 0 0 12px; padding-left: 14px; color: ${C.textMuted}; font-style: italic; }
+        .md hr { border: none; border-top: 1px solid ${C.border}; margin: 20px 0; }
+        .md a { color: ${C.accent}; text-decoration: none; }
+        .md a:hover { text-decoration: underline; }
+      `}</style>
+      <div className="md">
+        <Markdown>{text}</Markdown>
+      </div>
+    </div>
+  )
+}
+
 function StreamingIndicator() {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
@@ -238,10 +265,11 @@ export function App() {
   const [hasSession, setHasSession] = useState(false)
   const [query, setQuery] = useState('')
   const [model, setModel] = useState('gemini-2.5-flash')
-  const [maxIterations, setMaxIterations] = useState(3)
+  const [maxIterations, setMaxIterations] = useState(1)
   const [events, setEvents] = useState<ActivityEvent[]>([])
   const [autoScroll, setAutoScroll] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
+  const [showActivity, setShowActivity] = useState(false)
 
   const esRef = useRef<EventSource | null>(null)
   const feedEndRef = useRef<HTMLDivElement>(null)
@@ -533,19 +561,6 @@ export function App() {
               {/* Spacer */}
               <div style={{ flex: 1 }} />
 
-              {/* Auto-scroll toggle */}
-              {!isEmpty && (
-                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.textMuted, cursor: 'pointer', userSelect: 'none' }}>
-                  <input
-                    type="checkbox"
-                    checked={autoScroll}
-                    onChange={e => setAutoScroll(e.target.checked)}
-                    style={{ accentColor: C.accent }}
-                  />
-                  Auto-scroll
-                </label>
-              )}
-
               {/* Stop button */}
               {isLoading && (
                 <button onClick={stop} style={{
@@ -584,7 +599,7 @@ export function App() {
             </div>
           </div>
 
-          {/* Activity feed */}
+          {/* Feed */}
           {isEmpty && !isLoading ? (
             <div style={{
               flex: 1,
@@ -599,15 +614,92 @@ export function App() {
               <div style={{ fontSize: 32, opacity: 0.3 }}>✦</div>
               <p style={{ margin: 0, fontSize: 14 }}>Enter a topic above to get started</p>
             </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {events.map(event => (
-                <EventRow key={event.id} event={event} />
-              ))}
-              {isLoading && <StreamingIndicator />}
-              <div ref={feedEndRef} />
-            </div>
-          )}
+          ) : (() => {
+            // The final output is the last agent text event (will be the formatter's output once built).
+            // Everything else is intermediate activity.
+            const agentTextEvents = events.filter(e => e.kind === 'agent')
+            const finalOutput = !isLoading && agentTextEvents.length > 0 ? agentTextEvents.at(-1)! : null
+            const activityEvents = finalOutput ? events.filter(e => e.id !== finalOutput.id) : events
+            const latestStatusText = events.filter(e => e.text).at(-1)?.text ?? 'Working…'
+
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+                {/* While streaming: single animated status line */}
+                {isLoading && (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 12,
+                    padding: '20px 0',
+                  }}>
+                    <StreamingIndicator />
+                    <p style={{
+                      margin: 0,
+                      fontSize: 14,
+                      color: C.textSub,
+                      lineHeight: 1.6,
+                      transition: 'opacity 0.3s',
+                    }}>
+                      {latestStatusText}
+                    </p>
+                  </div>
+                )}
+
+                {/* Final output — prominent once streaming ends */}
+                {finalOutput && (
+                  <div style={{
+                    background: C.surface,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 12,
+                    padding: '24px 28px',
+                  }}>
+                    <MarkdownOutput text={finalOutput.text} />
+                  </div>
+                )}
+
+                {/* Activity log toggle */}
+                {activityEvents.length > 0 && !isLoading && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <button
+                      onClick={() => setShowActivity(v => !v)}
+                      style={{
+                        alignSelf: 'flex-start',
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        fontSize: 12,
+                        color: C.textMuted,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      <span style={{ fontSize: 10, transition: 'transform 0.2s', display: 'inline-block', transform: showActivity ? 'rotate(90deg)' : 'none' }}>▶</span>
+                      {showActivity ? 'Hide' : 'View'} activity · {activityEvents.length} step{activityEvents.length !== 1 ? 's' : ''}
+                    </button>
+
+                    {showActivity && (
+                      <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 8,
+                        paddingLeft: 12,
+                        borderLeft: `2px solid ${C.border}`,
+                      }}>
+                        {activityEvents.map(event => (
+                          <EventRow key={event.id} event={event} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div ref={feedEndRef} />
+              </div>
+            )
+          })()}
         </main>
       </div>
     </>

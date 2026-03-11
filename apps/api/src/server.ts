@@ -62,8 +62,6 @@ app.get('/api/run/stream', async (req, res) => {
 
   // Debug log (don't log the full key)
   // eslint-disable-next-line no-console
-  console.log(`[${reqId}] check key:`, { hasGeminiKey: !!process.env.GEMINI_API_KEY });
-
   try {
     const parsed = RunStreamQuery.safeParse(req.query);
     if (!parsed.success) {
@@ -124,6 +122,14 @@ app.get('/api/run/stream', async (req, res) => {
         const calls = getFunctionCalls(event) || [];
         const responses = getFunctionResponses(event) || [];
         const escalate = Boolean(event.actions?.escalate);
+
+        // Inner agents (researcher, judge) are wrapped by ProgressWrapper which
+        // emits its own progress messages. Suppress their raw LLM text here but
+        // still forward tool calls so the UI can show search activity.
+        const SUPPRESS_TEXT_FROM = new Set(['researcher', 'judge']);
+        if (SUPPRESS_TEXT_FROM.has(author) && calls.length === 0 && responses.length === 0 && !escalate) {
+          continue;
+        }
 
         // Load session to peek judge_output if present
         let judge_output: unknown | undefined;

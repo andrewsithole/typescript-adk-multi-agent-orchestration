@@ -5,7 +5,7 @@ export const researcher = new LlmAgent({
     model: 'gemini-2.5-flash',
     description: 'Gathers information using Google Search.',
     instruction: 'You are an expert researcher. Use the search tool to find facts.',
-    // Use the ADK built-in Google Search tool
+    outputKey: 'researcher_output',
     tools: [GOOGLE_SEARCH],
 });
 
