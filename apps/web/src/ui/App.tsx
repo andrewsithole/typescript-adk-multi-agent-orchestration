@@ -1,5 +1,7 @@
 import React, { useCallback, useRef, useState, useEffect } from 'react'
 
+// ── Types ────────────────────────────────────────────────────────────────────
+
 type Frame = {
   author?: string
   text?: string
@@ -10,90 +12,304 @@ type Frame = {
   error?: string
 }
 
+type EventKind = 'system' | 'agent' | 'tool_call' | 'tool_response' | 'escalate' | 'error' | 'judge'
+
+type ActivityEvent = {
+  id: number
+  kind: EventKind
+  author?: string
+  text: string
+}
+
+// ── Palette ──────────────────────────────────────────────────────────────────
+
+const C = {
+  bg:          '#09090b',
+  surface:     '#18181b',
+  surfaceAlt:  '#1f1f23',
+  border:      '#27272a',
+  borderFocus: '#7c3aed',
+  accent:      '#8b5cf6',
+  accentText:  '#c4b5fd',
+  text:        '#fafafa',
+  textSub:     '#a1a1aa',
+  textMuted:   '#52525b',
+  green:       '#4ade80',
+  greenBg:     'rgba(74,222,128,0.08)',
+  amber:       '#fbbf24',
+  amberBg:     'rgba(251,191,36,0.08)',
+  red:         '#f87171',
+  redBg:       'rgba(248,113,113,0.08)',
+  violet:      '#a78bfa',
+  violetBg:    'rgba(167,139,250,0.08)',
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+let _eid = 0
+function mkEvent(kind: EventKind, text: string, author?: string): ActivityEvent {
+  return { id: _eid++, kind, author, text }
+}
+
+const AUTHOR_COLORS: Record<string, string> = {
+  orchestrator:  C.accent,
+  'course_creator': C.accent,
+  researcher:    C.green,
+  writer:        '#60a5fa',
+  judge:         C.amber,
+  system:        C.textMuted,
+}
+
+function authorColor(name?: string): string {
+  if (!name) return C.textMuted
+  const lower = name.toLowerCase()
+  for (const [key, color] of Object.entries(AUTHOR_COLORS)) {
+    if (lower.includes(key)) return color
+  }
+  return C.accentText
+}
+
+function authorLabel(name?: string): string {
+  if (!name) return 'system'
+  return name.replace(/_/g, ' ')
+}
+
+// ── Event row components ──────────────────────────────────────────────────────
+
+function SystemRow({ text }: { text: string }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', userSelect: 'none' }}>
+      <div style={{ flex: 1, height: 1, background: C.border }} />
+      <span style={{ fontSize: 11, color: C.textMuted, whiteSpace: 'nowrap', letterSpacing: '0.04em' }}>{text}</span>
+      <div style={{ flex: 1, height: 1, background: C.border }} />
+    </div>
+  )
+}
+
+function AgentRow({ author, text }: { author?: string; text: string }) {
+  const color = authorColor(author)
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <span style={{ fontSize: 11, fontWeight: 600, color, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+        {authorLabel(author)}
+      </span>
+      <p style={{
+        margin: 0,
+        fontSize: 14,
+        lineHeight: 1.7,
+        color: C.text,
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+      }}>
+        {text}
+      </p>
+    </div>
+  )
+}
+
+function ToolCallRow({ author, text }: { author?: string; text: string }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: '6px 10px',
+      background: C.violetBg,
+      border: `1px solid rgba(167,139,250,0.15)`,
+      borderRadius: 6,
+    }}>
+      <span style={{ fontSize: 12, color: C.violet, opacity: 0.7 }}>↳</span>
+      <span style={{ fontSize: 12, color: C.textSub, fontFamily: 'monospace' }}>calling</span>
+      <span style={{ fontSize: 12, color: C.violet, fontFamily: 'monospace', fontWeight: 500 }}>{text}</span>
+      {author && (
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: C.textMuted, fontFamily: 'monospace' }}>
+          via {authorLabel(author)}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function ToolResponseRow({ text }: { text: string }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: '6px 10px',
+      background: C.greenBg,
+      border: `1px solid rgba(74,222,128,0.12)`,
+      borderRadius: 6,
+    }}>
+      <span style={{ fontSize: 12, color: C.green, opacity: 0.7 }}>←</span>
+      <span style={{ fontSize: 12, color: C.textSub, fontFamily: 'monospace' }}>got</span>
+      <span style={{ fontSize: 12, color: C.green, fontFamily: 'monospace', fontWeight: 500 }}>{text}</span>
+    </div>
+  )
+}
+
+function EscalateRow({ author }: { author?: string }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: '6px 10px',
+      background: C.amberBg,
+      border: `1px solid rgba(251,191,36,0.15)`,
+      borderRadius: 6,
+    }}>
+      <span style={{ fontSize: 12, color: C.amber }}>↑</span>
+      <span style={{ fontSize: 12, color: C.amber }}>
+        {author ? `${authorLabel(author)} escalating to parent` : 'escalating to parent agent'}
+      </span>
+    </div>
+  )
+}
+
+function ErrorRow({ text }: { text: string }) {
+  return (
+    <div style={{
+      padding: '10px 12px',
+      background: C.redBg,
+      border: `1px solid rgba(248,113,113,0.2)`,
+      borderRadius: 6,
+    }}>
+      <span style={{ fontSize: 12, color: C.red, fontWeight: 600 }}>Error · </span>
+      <span style={{ fontSize: 13, color: C.red }}>{text}</span>
+    </div>
+  )
+}
+
+function JudgeRow({ text }: { text: string }) {
+  return (
+    <div style={{
+      padding: '12px',
+      background: C.amberBg,
+      border: `1px solid rgba(251,191,36,0.2)`,
+      borderRadius: 8,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: C.amber, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 6 }}>
+        Judge Output
+      </div>
+      <pre style={{ margin: 0, fontSize: 12, color: C.amber, fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        {text}
+      </pre>
+    </div>
+  )
+}
+
+function EventRow({ event }: { event: ActivityEvent }) {
+  switch (event.kind) {
+    case 'system':        return <SystemRow text={event.text} />
+    case 'agent':         return <AgentRow author={event.author} text={event.text} />
+    case 'tool_call':     return <ToolCallRow author={event.author} text={event.text} />
+    case 'tool_response': return <ToolResponseRow text={event.text} />
+    case 'escalate':      return <EscalateRow author={event.author} />
+    case 'error':         return <ErrorRow text={event.text} />
+    case 'judge':         return <JudgeRow text={event.text} />
+  }
+}
+
+function StreamingIndicator() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {[0, 1, 2].map(i => (
+          <div key={i} style={{
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            background: C.accent,
+            animation: `pulse 1.2s ease-in-out ${i * 0.2}s infinite`,
+          }} />
+        ))}
+      </div>
+      <span style={{ fontSize: 12, color: C.textMuted }}>Generating…</span>
+    </div>
+  )
+}
+
+// ── Main App ──────────────────────────────────────────────────────────────────
+
 export function App() {
-  // Hidden stable user id (per-browser) stored in localStorage
   const uidRef = useRef<string>('')
   const sidRef = useRef<string>('')
   const [hasSession, setHasSession] = useState(false)
-  const [query, setQuery] = useState('Create a course on the history of Coffee.')
+  const [query, setQuery] = useState('')
   const [model, setModel] = useState('gemini-2.5-flash')
   const [maxIterations, setMaxIterations] = useState(3)
-  const [lines, setLines] = useState<string[]>([])
+  const [events, setEvents] = useState<ActivityEvent[]>([])
   const [autoScroll, setAutoScroll] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  
-  const esRef = useRef<EventSource | null>(null)
-  const logEndRef = useRef<HTMLDivElement>(null)
 
-  // Initialize a stable user id once per browser
+  const esRef = useRef<EventSource | null>(null)
+  const feedEndRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
   useEffect(() => {
-    const key = 'uid';
-    let uid = ''
-    try {
-      uid = localStorage.getItem(key) || ''
-    } catch {}
-    if (!uid) {
-      uid = `u_${Math.random().toString(36).slice(2, 10)}`
-      try { localStorage.setItem(key, uid) } catch {}
+    const stored = (k: string, prefix: string) => {
+      try { return localStorage.getItem(k) || '' } catch { return '' }
     }
+    const mkId = (prefix: string) => `${prefix}_${Math.random().toString(36).slice(2, 10)}`
+
+    let uid = stored('uid', 'u')
+    if (!uid) { uid = mkId('u'); try { localStorage.setItem('uid', uid) } catch {} }
     uidRef.current = uid
-    // session id
-    const skey = 'sid'
-    let sid = ''
-    try {
-      sid = localStorage.getItem(skey) || ''
-    } catch {}
-    if (!sid) {
-      sid = `s_${Math.random().toString(36).slice(2, 10)}`
-      try { localStorage.setItem(skey, sid) } catch {}
-    }
+
+    let sid = stored('sid', 's')
+    if (!sid) { sid = mkId('s'); try { localStorage.setItem('sid', sid) } catch {} }
     sidRef.current = sid
   }, [])
 
   useEffect(() => {
-    if (autoScroll && logEndRef.current) {
-      logEndRef.current.scrollIntoView({ behavior: 'smooth' })
-    }
-  }, [lines, autoScroll])
+    if (autoScroll) feedEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [events, autoScroll])
+
+  const pushEvent = useCallback((e: ActivityEvent) => {
+    setEvents(prev => [...prev.slice(-500), e])
+  }, [])
 
   const createNewSession = useCallback(async () => {
+    const sid = `s_${Math.random().toString(36).slice(2, 10)}`
+    sidRef.current = sid
+    try { localStorage.setItem('sid', sid) } catch {}
     try {
       const resp = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: uidRef.current, sessionId: sidRef.current })
-      });
-      if (!resp.ok) throw new Error('Failed to create session');
-      setHasSession(true);
-      setLines([`--- New Session Created ---`]);
+        body: JSON.stringify({ userId: uidRef.current, sessionId: sidRef.current }),
+      })
+      if (!resp.ok) throw new Error('Failed to create session')
+      setHasSession(true)
+      setEvents([])
     } catch (err) {
-      alert((err as Error).message);
+      pushEvent(mkEvent('error', (err as Error).message))
     }
-  }, []);
+  }, [pushEvent])
 
-  // Create initial session if none exists
+  const initSession = useCallback(async () => {
+    try {
+      const resp = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: uidRef.current, sessionId: sidRef.current }),
+      })
+      if (!resp.ok) throw new Error('Failed to create session')
+      setHasSession(true)
+    } catch (err) {
+      pushEvent(mkEvent('error', (err as Error).message))
+    }
+  }, [pushEvent])
+
   useEffect(() => {
-    if (!hasSession) {
-      createNewSession();
-    }
-  }, [hasSession, createNewSession]);
-
-  const validate = () => {
-    if (!query.trim() || query.length > 2000) return 'Query must be 1-2000 chars'
-    return null
-  }
+    if (!hasSession) initSession()
+  }, [hasSession, initSession])
 
   const start = useCallback(() => {
-    const error = validate()
-    if (error) {
-      alert(error)
-      return
-    }
+    if (!query.trim() || query.length > 2000) return
+    if (esRef.current) esRef.current.close()
 
-    if (esRef.current) {
-      esRef.current.close()
-    }
-    
     setIsLoading(true)
     const url = new URL('/api/run/stream', window.location.origin)
     url.searchParams.set('userId', uidRef.current)
@@ -103,165 +319,297 @@ export function App() {
     url.searchParams.set('maxIterations', String(maxIterations))
 
     const es = new EventSource(url.toString())
-    
+
     es.onopen = () => {
-      setLines((prev) => [...prev.slice(-1000), `--- Connected to ${url.origin} ---`])
+      pushEvent(mkEvent('system', 'Connected'))
     }
 
     es.onmessage = (ev) => {
       try {
         const data: Frame = JSON.parse(ev.data)
-        const out: string[] = []
-        if (data.error) out.push(`- [error] ${data.error}`)
-        if (data.text) out.push(`- [${data.author ?? 'system'}] ${data.text}`)
-        if (!data.text && data.author && data.author !== 'user') out.push(`- [${data.author}] (no text)`)
-        data.calls?.forEach((c) => out.push(`- [${data.author ?? 'system'}] -> tool call: ${c}`))
-        data.responses?.forEach((r) => out.push(`- [${data.author ?? 'system'}] <- tool response: ${r}`))
-        if (data.escalate) out.push(`- [${data.author ?? 'system'}] escalating to parent agent`)
-        if (data.judge_output) out.push(`- [state] judge_output = ${JSON.stringify(data.judge_output)}`)
-        
-        if (out.length) {
-          setLines((prev) => [...prev.slice(-1000), ...out])
+        if (data.error) {
+          pushEvent(mkEvent('error', data.error))
+          return
+        }
+        if (data.text) pushEvent(mkEvent('agent', data.text, data.author))
+        else if (data.author && data.author !== 'user') {
+          // no-text agent event — skip, tool calls below are more informative
+        }
+        data.calls?.forEach(c => pushEvent(mkEvent('tool_call', c, data.author)))
+        data.responses?.forEach(r => pushEvent(mkEvent('tool_response', r)))
+        if (data.escalate) pushEvent(mkEvent('escalate', '', data.author))
+        if (data.judge_output) {
+          pushEvent(mkEvent('judge', typeof data.judge_output === 'string'
+            ? data.judge_output
+            : JSON.stringify(data.judge_output, null, 2)))
         }
       } catch (e) {
-        console.error('SSE Parse Error', e)
+        console.error('SSE parse error', e)
       }
     }
 
     es.onerror = () => {
       es.close()
+      esRef.current = null
       setIsLoading(false)
-      setLines((prev) => [...prev.slice(-1000), '--- Stream disconnected ---'])
+      pushEvent(mkEvent('system', 'Disconnected'))
     }
-    
+
     esRef.current = es
-  }, [query, model, maxIterations])
+  }, [query, model, maxIterations, pushEvent])
 
   const stop = useCallback(() => {
-    if (esRef.current) {
-      esRef.current.close()
-      esRef.current = null
-    }
+    esRef.current?.close()
+    esRef.current = null
     setIsLoading(false)
-    setLines((prev) => [...prev.slice(-1000), '--- Stream stopped by user ---'])
-  }, [])
+    pushEvent(mkEvent('system', 'Stopped'))
+  }, [pushEvent])
 
-  const containerStyle: React.CSSProperties = {
-    maxWidth: '900px',
-    margin: '0 auto',
-    padding: '24px',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-    color: '#333'
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !isLoading && hasSession && query.trim()) {
+      start()
+    }
   }
 
-  const controlGridStyle: React.CSSProperties = {
-    display: 'grid',
-    gap: '16px',
-    background: '#f5f5f5',
-    padding: '20px',
-    borderRadius: '8px',
-    border: '1px solid #ddd'
-  }
-
-  const inputStyle: React.CSSProperties = {
-    padding: '8px',
-    borderRadius: '4px',
-    border: '1px solid #ccc',
-    fontSize: '14px'
-  }
-
-  const logStyle: React.CSSProperties = {
-    background: '#1e1e1e',
-    color: '#d4d4d4',
-    padding: '16px',
-    borderRadius: '8px',
-    height: '500px',
-    overflowY: 'auto',
-    fontSize: '13px',
-    lineHeight: '1.5',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-    fontFamily: 'Menlo, Monaco, "Courier New", monospace'
-  }
+  const isEmpty = events.length === 0
 
   return (
-    <div style={containerStyle}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '24px' }}>Agentic Course Creator</h1>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{ fontSize: '12px', color: '#666' }}>
-            {isLoading ? '● Streaming...' : '○ Ready'}
+    <>
+      <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; background: ${C.bg}; }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50%       { opacity: 1;   transform: scale(1); }
+        }
+        textarea:focus { outline: none; border-color: ${C.borderFocus} !important; }
+        select:focus   { outline: none; border-color: ${C.borderFocus} !important; }
+        input:focus    { outline: none; border-color: ${C.borderFocus} !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: ${C.textMuted}; }
+      `}</style>
+
+      <div style={{
+        minHeight: '100dvh',
+        background: C.bg,
+        color: C.text,
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        padding: '0 16px',
+      }}>
+        {/* Header */}
+        <header style={{
+          width: '100%',
+          maxWidth: 720,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '24px 0 0',
+        }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 18, fontWeight: 600, letterSpacing: '-0.02em', color: C.text }}>
+              Course Creator
+            </h1>
+            <p style={{ margin: '2px 0 0', fontSize: 12, color: C.textMuted }}>
+              AI-powered course generation
+            </p>
           </div>
-        </div>
-      </header>
-
-      <section style={controlGridStyle}>
-        {/* API Base removed; app assumes same-origin via Vite proxy */}
-
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Model Selection</span>
-            <select style={inputStyle} value={model} onChange={(e) => setModel(e.target.value)}>
-              <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-              <option value="gemini-1.5-flash">gemini-1.5-flash</option>
-              <option value="gemini-1.5-pro">gemini-1.5-pro</option>
-            </select>
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Max Iterations</span>
-            <input style={inputStyle} type="number" value={maxIterations} onChange={(e) => setMaxIterations(Number(e.target.value))} />
-          </label>
-        </div>
-
-        <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Research Topic</span>
-          <textarea 
-            style={{ ...inputStyle, resize: 'vertical' }} 
-            rows={3} 
-            value={query} 
-            onChange={(e) => setQuery(e.target.value)} 
-            placeholder="e.g. History of the internet..."
-          />
-        </label>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              style={{ padding: '8px 20px', borderRadius: '4px', border: 'none', background: '#007bff', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
-              onClick={start}
-              disabled={isLoading || !hasSession}
-            >
-              Run Pipeline
-            </button>
-            <button 
-              style={{ padding: '8px 20px', borderRadius: '4px', border: '1px solid #ccc', background: 'white', cursor: 'pointer' }}
-              onClick={stop}
-              disabled={!isLoading}
-            >
-              Stop
-            </button>
-            <button 
-              style={{ padding: '8px 20px', borderRadius: '4px', border: '1px solid #ccc', background: 'white', cursor: 'pointer' }}
-              onClick={() => setLines([])}
-            >
-              Clear Logs
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {events.length > 0 && (
+              <button onClick={createNewSession} style={{
+                background: 'none',
+                border: `1px solid ${C.border}`,
+                borderRadius: 6,
+                padding: '5px 12px',
+                fontSize: 12,
+                color: C.textSub,
+                cursor: 'pointer',
+              }}>
+                New conversation
+              </button>
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: isLoading ? C.accent : (hasSession ? C.green : C.textMuted),
+                boxShadow: isLoading ? `0 0 8px ${C.accent}` : 'none',
+                transition: 'all 0.3s',
+              }} />
+              <span style={{ fontSize: 12, color: C.textMuted }}>
+                {isLoading ? 'Generating' : hasSession ? 'Ready' : 'Connecting'}
+              </span>
+            </div>
           </div>
-          <label style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />
-            Auto-scroll
-          </label>
-        </div>
-      </section>
+        </header>
 
-      <div style={logStyle}>
-        {lines.length === 0 && <div style={{ color: '#666', fontStyle: 'italic' }}>Logs will appear here...</div>}
-        {lines.join('\n')}
-        <div ref={logEndRef} />
+        {/* Main content */}
+        <main style={{ width: '100%', maxWidth: 720, flex: 1, display: 'flex', flexDirection: 'column', paddingTop: 32, paddingBottom: 40, gap: 24 }}>
+
+          {/* Composer */}
+          <div style={{
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            borderRadius: 12,
+            overflow: 'hidden',
+          }}>
+            <textarea
+              ref={textareaRef}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="What would you like to learn about?"
+              rows={3}
+              disabled={isLoading}
+              style={{
+                width: '100%',
+                padding: '16px 18px',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: `1px solid ${C.border}`,
+                color: C.text,
+                fontSize: 15,
+                lineHeight: 1.6,
+                resize: 'none',
+                fontFamily: 'inherit',
+                transition: 'border-color 0.2s',
+              }}
+            />
+
+            {/* Controls row */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '10px 12px',
+              flexWrap: 'wrap',
+            }}>
+              {/* Model selector */}
+              <select
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                style={{
+                  background: C.surfaceAlt,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  padding: '5px 8px',
+                  fontSize: 12,
+                  color: C.textSub,
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+              </select>
+
+              {/* Iterations */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12, color: C.textMuted }}>Depth</span>
+                <input
+                  type="number"
+                  value={maxIterations}
+                  min={1}
+                  max={10}
+                  onChange={e => setMaxIterations(Number(e.target.value))}
+                  style={{
+                    width: 48,
+                    background: C.surfaceAlt,
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 6,
+                    padding: '5px 8px',
+                    fontSize: 12,
+                    color: C.textSub,
+                    textAlign: 'center',
+                  }}
+                />
+              </div>
+
+              {/* Spacer */}
+              <div style={{ flex: 1 }} />
+
+              {/* Auto-scroll toggle */}
+              {!isEmpty && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: C.textMuted, cursor: 'pointer', userSelect: 'none' }}>
+                  <input
+                    type="checkbox"
+                    checked={autoScroll}
+                    onChange={e => setAutoScroll(e.target.checked)}
+                    style={{ accentColor: C.accent }}
+                  />
+                  Auto-scroll
+                </label>
+              )}
+
+              {/* Stop button */}
+              {isLoading && (
+                <button onClick={stop} style={{
+                  background: 'none',
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 6,
+                  padding: '6px 14px',
+                  fontSize: 13,
+                  color: C.textSub,
+                  cursor: 'pointer',
+                }}>
+                  Stop
+                </button>
+              )}
+
+              {/* Generate button */}
+              {!isLoading && (
+                <button
+                  onClick={start}
+                  disabled={!hasSession || !query.trim()}
+                  style={{
+                    background: hasSession && query.trim() ? C.accent : C.border,
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '6px 16px',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: hasSession && query.trim() ? '#fff' : C.textMuted,
+                    cursor: hasSession && query.trim() ? 'pointer' : 'default',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  Generate ⌘↵
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Activity feed */}
+          {isEmpty && !isLoading ? (
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              padding: '60px 0',
+              color: C.textMuted,
+            }}>
+              <div style={{ fontSize: 32, opacity: 0.3 }}>✦</div>
+              <p style={{ margin: 0, fontSize: 14 }}>Enter a topic above to get started</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {events.map(event => (
+                <EventRow key={event.id} event={event} />
+              ))}
+              {isLoading && <StreamingIndicator />}
+              <div ref={feedEndRef} />
+            </div>
+          )}
+        </main>
       </div>
-    </div>
+    </>
   )
 }
