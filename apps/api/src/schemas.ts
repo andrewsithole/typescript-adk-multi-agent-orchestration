@@ -4,7 +4,7 @@ const id = z.string().min(1).max(128);
 
 export const SessionCreateBody = z.object({
   userId: id,
-  sessionId: id.optional(),
+  sessionId: id,
 });
 
 export const RunStreamQuery = z.object({

@@ -3,7 +3,6 @@ import 'dotenv/config';
 import dotenv from 'dotenv';
 import path from 'node:path';
 import express from 'express';
-import cors from 'cors';
 import { Runner, InMemorySessionService, stringifyContent, getFunctionCalls, getFunctionResponses } from '@google/adk';
 
 // Import the orchestrated agent colocated with the API.
@@ -27,7 +26,6 @@ const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const appName = process.env.APP_NAME || 'ts-multi-agents';
 
-app.use(cors({ origin: true }));
 app.use(express.json());
 
 // Shared in-memory session service for this process
@@ -49,8 +47,8 @@ app.post('/api/sessions', async (req, res) => {
       return sendError(res, 400, 'invalid_request', parsed.error.message, reqId);
     }
     const { userId, sessionId } = parsed.data;
-    const session = await sessionService.createSession({ appName, userId, sessionId:sessionId||"" });
-    res.json({ id: session.id, userId: session.userId, appName: session.appName, reqId });
+    await sessionService.createSession({ appName, userId, sessionId: sessionId || '' });
+    res.status(204).end();
   } catch (err) {
     sendError(res, 500, 'internal_error', (err as Error).message, reqId);
   }
@@ -84,13 +82,12 @@ app.get('/api/run/stream', async (req, res) => {
 
     const runner = new Runner({ appName, agent: courseCreator, sessionService });
 
-    // SSE headers
+    // SSE headers (same-origin; no CORS/credentials needed)
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
       'X-Accel-Buffering': 'no',
-      'Access-Control-Allow-Origin': '*',
     });
 
     // Preamble

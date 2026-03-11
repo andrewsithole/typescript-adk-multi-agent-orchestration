@@ -11,10 +11,10 @@ type Frame = {
 }
 
 export function App() {
-  // @ts-ignore
-  const [apiBase, setApiBase] = useState<string>((import.meta.env.VITE_API_BASE as string) || 'http://localhost:3000')
-  const [userId, setUserId] = useState('user-1')
-  const [sessionId, setSessionId] = useState('')
+  // Hidden stable user id (per-browser) stored in localStorage
+  const uidRef = useRef<string>('')
+  const sidRef = useRef<string>('')
+  const [hasSession, setHasSession] = useState(false)
   const [query, setQuery] = useState('Create a course on the history of Coffee.')
   const [model, setModel] = useState('gemini-2.5-flash')
   const [maxIterations, setMaxIterations] = useState(3)
@@ -25,6 +25,31 @@ export function App() {
   const esRef = useRef<EventSource | null>(null)
   const logEndRef = useRef<HTMLDivElement>(null)
 
+  // Initialize a stable user id once per browser
+  useEffect(() => {
+    const key = 'uid';
+    let uid = ''
+    try {
+      uid = localStorage.getItem(key) || ''
+    } catch {}
+    if (!uid) {
+      uid = `u_${Math.random().toString(36).slice(2, 10)}`
+      try { localStorage.setItem(key, uid) } catch {}
+    }
+    uidRef.current = uid
+    // session id
+    const skey = 'sid'
+    let sid = ''
+    try {
+      sid = localStorage.getItem(skey) || ''
+    } catch {}
+    if (!sid) {
+      sid = `s_${Math.random().toString(36).slice(2, 10)}`
+      try { localStorage.setItem(skey, sid) } catch {}
+    }
+    sidRef.current = sid
+  }, [])
+
   useEffect(() => {
     if (autoScroll && logEndRef.current) {
       logEndRef.current.scrollIntoView({ behavior: 'smooth' })
@@ -32,32 +57,28 @@ export function App() {
   }, [lines, autoScroll])
 
   const createNewSession = useCallback(async () => {
-    const newId = Math.random().toString(36).substring(7);
     try {
-      const resp = await fetch(`${apiBase}/api/sessions`, {
+      const resp = await fetch('/api/sessions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, sessionId: newId })
+        body: JSON.stringify({ userId: uidRef.current, sessionId: sidRef.current })
       });
       if (!resp.ok) throw new Error('Failed to create session');
-      setSessionId(newId);
-      setLines([`--- New Session Created: ${newId} ---`]);
+      setHasSession(true);
+      setLines([`--- New Session Created ---`]);
     } catch (err) {
       alert((err as Error).message);
     }
-  }, [apiBase, userId]);
+  }, []);
 
   // Create initial session if none exists
   useEffect(() => {
-    if (!sessionId) {
+    if (!hasSession) {
       createNewSession();
     }
-  }, [sessionId, createNewSession]);
+  }, [hasSession, createNewSession]);
 
   const validate = () => {
-    if (!apiBase.trim()) return 'API Base is required'
-    if (!userId.trim() || userId.length > 128) return 'User ID must be 1-128 chars'
-    if (!sessionId.trim()) return 'Session not initialized'
     if (!query.trim() || query.length > 2000) return 'Query must be 1-2000 chars'
     return null
   }
@@ -74,9 +95,9 @@ export function App() {
     }
     
     setIsLoading(true)
-    const url = new URL('/api/run/stream', apiBase)
-    url.searchParams.set('userId', userId)
-    url.searchParams.set('sessionId', sessionId)
+    const url = new URL('/api/run/stream', window.location.origin)
+    url.searchParams.set('userId', uidRef.current)
+    url.searchParams.set('sessionId', sidRef.current)
     url.searchParams.set('q', query)
     url.searchParams.set('model', model)
     url.searchParams.set('maxIterations', String(maxIterations))
@@ -114,7 +135,7 @@ export function App() {
     }
     
     esRef.current = es
-  }, [apiBase, query, sessionId, userId, model, maxIterations])
+  }, [query, model, maxIterations])
 
   const stop = useCallback(() => {
     if (esRef.current) {
@@ -171,12 +192,6 @@ export function App() {
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ margin: 0, fontSize: '24px' }}>Agentic Course Creator</h1>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button 
-            style={{ padding: '6px 12px', borderRadius: '4px', border: 'none', background: '#28a745', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
-            onClick={createNewSession}
-          >
-            + New Session
-          </button>
           <div style={{ fontSize: '12px', color: '#666' }}>
             {isLoading ? '● Streaming...' : '○ Ready'}
           </div>
@@ -184,16 +199,7 @@ export function App() {
       </header>
 
       <section style={controlGridStyle}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>API Base</span>
-            <input style={inputStyle} value={apiBase} onChange={(e) => setApiBase(e.target.value)} />
-          </label>
-          <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>User ID</span>
-            <input style={inputStyle} value={userId} onChange={(e) => setUserId(e.target.value)} />
-          </label>
-        </div>
+        {/* API Base removed; app assumes same-origin via Vite proxy */}
 
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
           <label style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -226,7 +232,7 @@ export function App() {
             <button 
               style={{ padding: '8px 20px', borderRadius: '4px', border: 'none', background: '#007bff', color: 'white', cursor: 'pointer', fontWeight: 'bold' }}
               onClick={start}
-              disabled={isLoading || !sessionId}
+              disabled={isLoading || !hasSession}
             >
               Run Pipeline
             </button>
@@ -253,7 +259,7 @@ export function App() {
 
       <div style={logStyle}>
         {lines.length === 0 && <div style={{ color: '#666', fontStyle: 'italic' }}>Logs will appear here...</div>}
-        {lines.join('')}
+        {lines.join('\n')}
         <div ref={logEndRef} />
       </div>
     </div>
