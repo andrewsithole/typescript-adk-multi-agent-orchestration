@@ -6,7 +6,7 @@ import express from 'express';
 import { Runner, InMemorySessionService, stringifyContent, getFunctionCalls, getFunctionResponses } from '@google/adk';
 
 // Import the orchestrated agent colocated with the API.
-import { courseCreator } from './agents/orchestrator.js';
+import { hypeSquadCreator } from './agents/orchestrator.js';
 
 import { SessionCreateBody, RunStreamQuery } from './schemas.js';
 import { randomUUID } from 'node:crypto';
@@ -78,7 +78,7 @@ app.get('/api/run/stream', async (req, res) => {
       return sendError(res, 404, 'session_not_found', `Session ${sessionId} not found for user ${userId}. Please create a session first via POST /api/sessions.`, reqId);
     }
 
-    const runner = new Runner({ appName, agent: courseCreator, sessionService });
+    const runner = new Runner({ appName, agent: hypeSquadCreator, sessionService });
 
     // SSE headers (same-origin; no CORS/credentials needed)
     res.writeHead(200, {
@@ -103,6 +103,15 @@ app.get('/api/run/stream', async (req, res) => {
       clearInterval(ping);
     });
 
+    // Accumulated outputs — updated from each event's stateDelta as it flows through.
+    // This avoids a round-trip getSession call and the stale-state problem that arises
+    // because InMemorySessionService.getSession clones the stored session, which is only
+    // updated when appendEvent is called on the *stored* copy — not on the runner's
+    // in-memory copy.
+    let accJudgeOutput: string | undefined;
+    let accTwitterOutput: string | undefined;
+    let accLinkedinOutput: string | undefined;
+
     // Stream runner events
     try {
       for await (const event of runner.runAsync({
@@ -117,30 +126,36 @@ app.get('/api/run/stream', async (req, res) => {
           break;
         }
 
+        // Capture outputs from stateDelta as they arrive — before any suppress logic.
+        const delta = event.actions?.stateDelta as Record<string, unknown> | undefined;
+        if (delta) {
+          const getVal = (val: any) => {
+            if (!val) return undefined;
+            if (typeof val === 'string') return val;
+            return stringifyContent(val);
+          };
+          if (delta['judge_output']) accJudgeOutput = getVal(delta['judge_output']);
+          if (delta['twitter_output']) accTwitterOutput = getVal(delta['twitter_output']);
+          if (delta['linkedin_output']) accLinkedinOutput = getVal(delta['linkedin_output']);
+        }
+
         const text = stringifyContent(event);
         const author = event.author ?? 'system';
         const calls = getFunctionCalls(event) || [];
         const responses = getFunctionResponses(event) || [];
         const escalate = Boolean(event.actions?.escalate);
 
-        // Inner agents (researcher, judge) are wrapped by ProgressWrapper which
+        // Inner agents (researcher, judge, etc.) are wrapped by ProgressWrapper which
         // emits its own progress messages. Suppress their raw LLM text here but
         // still forward tool calls so the UI can show search activity.
+        // NOTE: We allow formatters (thread_whiz, the_professional) to pass through
+        // so the UI can capture their text directly if session state is delayed.
         const SUPPRESS_TEXT_FROM = new Set(['researcher', 'judge']);
         if (SUPPRESS_TEXT_FROM.has(author) && calls.length === 0 && responses.length === 0 && !escalate) {
           continue;
         }
 
-        // Load session to peek judge_output if present
-        let judge_output: unknown | undefined;
-        try {
-          const session = await sessionService.getSession({ appName, userId, sessionId });
-          judge_output = session?.state?.['judge_output'];
-        } catch {
-          // ignore
-        }
-
-        send({ author, text, calls: calls.map(c => c.name), responses: responses.map(r => r.name), escalate, judge_output, reqId });
+        send({ author, text, calls: calls.map(c => c.name), responses: responses.map(r => r.name), escalate, judge_output: accJudgeOutput, twitter_output: accTwitterOutput, linkedin_output: accLinkedinOutput, reqId });
         eventCount++;
       }
     } catch (streamErr) {
@@ -148,6 +163,11 @@ app.get('/api/run/stream', async (req, res) => {
       send({ error: (streamErr as Error).message, code: 'stream_error', reqId });
     } finally {
       clearInterval(ping);
+      // Send final snapshot of any accumulated outputs.
+      if (accJudgeOutput || accTwitterOutput || accLinkedinOutput) {
+        send({ author: 'system', text: 'done', judge_output: accJudgeOutput, twitter_output: accTwitterOutput, linkedin_output: accLinkedinOutput, done: true, reqId });
+        eventCount++;
+      }
       // eslint-disable-next-line no-console
       console.log(`[${reqId}] stream end`, { eventCount, reason });
       res.end();
