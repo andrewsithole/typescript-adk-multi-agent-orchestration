@@ -163,6 +163,26 @@ app.get('/api/run/stream', async (req, res) => {
       send({ error: (streamErr as Error).message, code: 'stream_error', reqId });
     } finally {
       clearInterval(ping);
+
+      // Fallback: if we didn't capture outputs via stateDelta during the stream,
+      // try to read the latest session snapshot to avoid missing final content.
+      try {
+        if (!accJudgeOutput || !accTwitterOutput || !accLinkedinOutput) {
+          const latest = await sessionService.getSession({ appName, userId, sessionId });
+          const st = latest?.state as Record<string, unknown> | undefined;
+          const getVal = (val: any) => {
+            if (!val) return undefined;
+            if (typeof val === 'string') return val;
+            return stringifyContent(val);
+          };
+          if (!accJudgeOutput && st && st['judge_output']) accJudgeOutput = getVal(st['judge_output']);
+          if (!accTwitterOutput && st && st['twitter_output']) accTwitterOutput = getVal(st['twitter_output']);
+          if (!accLinkedinOutput && st && st['linkedin_output']) accLinkedinOutput = getVal(st['linkedin_output']);
+        }
+      } catch {
+        // Ignore snapshot fallback errors; we'll still end the stream gracefully.
+      }
+
       // Send final snapshot of any accumulated outputs.
       if (accJudgeOutput || accTwitterOutput || accLinkedinOutput) {
         send({ author: 'system', text: 'done', judge_output: accJudgeOutput, twitter_output: accTwitterOutput, linkedin_output: accLinkedinOutput, done: true, reqId });

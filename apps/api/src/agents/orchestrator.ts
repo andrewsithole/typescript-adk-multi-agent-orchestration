@@ -1,18 +1,14 @@
 import {
     SequentialAgent,
     LoopAgent,
-    BaseAgent,
-    InvocationContext,
-    createEvent,
-    createEventActions,
+    ParallelAgent,
 } from '@google/adk';
 import EscalationChecker from './EscalationChecker.js';
 import { researcher } from './researcher.js';
 import { judge } from './judge.js';
+import { threadWhiz } from './threadWhiz.js';
+import { theProfessional } from './theProfessional.js';
 import ProgressWrapper from "./ProgressChecker.js";
-import {formatter} from "./formatter.js";
-
-// The "Escalation Checker" - Deterministic logic to break the loop
 
 // 1. Create the Research Loop (Researcher -> Judge -> Checker)
 const researchLoop = new LoopAgent({
@@ -25,10 +21,18 @@ const researchLoop = new LoopAgent({
     maxIterations: 3,
 });
 
-// 2. Create the Final Pipeline
-export const courseCreator = new SequentialAgent({
-    name: 'course_creator_pipeline',
-    description: 'Researches and builds a course.',
-    subAgents: [researchLoop, formatter], // You would add a ContentBuilder agent here next
+// 2. Create the Formatting Layer (Twitter & LinkedIn in parallel)
+const formatters = new ParallelAgent({
+    name: 'formatters',
+    subAgents: [
+        new ProgressWrapper(threadWhiz, 'Crafting Twitter thread…', 'Twitter thread ready.', { name: 'twitter_wrapper' }),
+        new ProgressWrapper(theProfessional, 'Writing LinkedIn post…', 'LinkedIn post ready.', { name: 'linkedin_wrapper' }),
+    ],
 });
 
+// 3. Create the Final Pipeline
+export const hypeSquadCreator = new SequentialAgent({
+    name: 'hype_squad',
+    description: 'Researches a topic and generates viral social media content.',
+    subAgents: [researchLoop, formatters],
+});

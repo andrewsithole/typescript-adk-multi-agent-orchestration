@@ -65,7 +65,7 @@ When a user calls `GET /api/run/stream`, the following sequence happens:
 ### 4. Runner Execution
 - An instance of the `Runner` (from `@google/adk`) is created.
 - The `Runner` is given:
-  - The `courseCreator` agent (the "brain" that knows how to build courses).
+  - The `hypeSquadCreator` agent (the "brain" that knows how to build viral social content).
   - The `sessionService` (to remember previous messages).
   - The user's new message.
 
