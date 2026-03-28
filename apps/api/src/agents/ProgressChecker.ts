@@ -5,6 +5,9 @@ import {
     getFunctionCalls,
     getFunctionResponses,
 } from '@google/adk';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('ProgressWrapper');
 
 export default class ProgressWrapper extends BaseAgent {
     constructor(
@@ -25,7 +28,8 @@ export default class ProgressWrapper extends BaseAgent {
         for await (const event of this.inner.runAsync(ctx)) {
             const parts = event.content?.parts ?? [];
             const textSnippet = parts.map((p: any) => p.text ?? '').join('').slice(0, 120);
-            console.log(`[DEBUG:${this.name}] event received`, {
+            log.debug('event received', {
+                agent: this.name,
                 author: event.author,
                 partial: event.partial ?? false,
                 functionCalls: getFunctionCalls(event).map((c: any) => c.name),
@@ -40,7 +44,7 @@ export default class ProgressWrapper extends BaseAgent {
             yield event;
         }
 
-        console.log(`[${this.name}] session state after inner run:`, JSON.stringify(ctx.session.state, null, 2));
+        log.info('session state after inner run', { agent: this.name, state: ctx.session.state });
 
         yield createEvent({
             author: this.name,

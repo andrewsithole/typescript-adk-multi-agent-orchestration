@@ -1,5 +1,8 @@
 import { LlmAgent, zodObjectToSchema, stringifyContent } from '@google/adk';
 import { z } from 'zod';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('judge');
 
 export const JudgeFeedbackSchema = z.object({
     status: z.enum(['pass', 'fail']),
@@ -19,7 +22,7 @@ export const judge = new LlmAgent({
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];
         const research = raw ? stringifyContent(raw as any) : '(no research available)';
-        console.log('[DEBUG:judge] received research to evaluate', {
+        log.debug('received research to evaluate', {
             hasResearch: !!raw,
             researchSnippet: research.slice(0, 200),
         });

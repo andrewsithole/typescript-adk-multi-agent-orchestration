@@ -10,6 +10,9 @@ import { hypeSquadCreator } from './agents/orchestrator.js';
 
 import { SessionCreateBody, RunStreamQuery } from './schemas.js';
 import { randomUUID } from 'node:crypto';
+import { createLogger } from './logger.js';
+
+const log = createLogger('server');
 
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env'), override: false });
 
@@ -60,8 +63,6 @@ app.get('/api/run/stream', async (req, res) => {
   let eventCount = 0;
   let reason: 'completed' | 'aborted' | 'error' = 'completed';
 
-  // Debug log (don't log the full key)
-  // eslint-disable-next-line no-console
   try {
     const parsed = RunStreamQuery.safeParse(req.query);
     if (!parsed.success) {
@@ -69,8 +70,7 @@ app.get('/api/run/stream', async (req, res) => {
     }
     const { userId, sessionId, q } = parsed.data;
 
-    // eslint-disable-next-line no-console
-    console.log(`[${reqId}] stream start`, { userId, sessionId });
+    log.info('stream start', { reqId, userId, sessionId });
 
     // Ensure a session exists (Strict production pattern)
     const existing = await sessionService.getSession({ appName, userId, sessionId });
@@ -121,8 +121,7 @@ app.get('/api/run/stream', async (req, res) => {
       })) {
         if (aborted) {
           reason = 'aborted';
-          // eslint-disable-next-line no-console
-          console.log(`[${reqId}] stream stopped (aborted)`);
+          log.info('stream stopped (aborted)', { reqId });
           break;
         }
 
@@ -187,8 +186,7 @@ app.get('/api/run/stream', async (req, res) => {
         send({ author: 'system', text: 'done', judge_output: accJudgeOutput, twitter_output: accTwitterOutput, linkedin_output: accLinkedinOutput, done: true, reqId });
         eventCount++;
       }
-      // eslint-disable-next-line no-console
-      console.log(`[${reqId}] stream end`, { eventCount, reason });
+      log.info('stream end', { reqId, eventCount, reason });
       res.end();
     }
   } catch (err) {
@@ -197,10 +195,8 @@ app.get('/api/run/stream', async (req, res) => {
 });
 
 app.listen(port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`API listening on :${port}`);
-  // eslint-disable-next-line no-console
-  console.log('Environment variables check:', {
+  log.info(`API listening on :${port}`);
+  log.debug('Environment variables check', {
     cwd: process.cwd(),
     hasGoogleApiKey: !!process.env.GOOGLE_GENAI_API_KEY,
     hasGeminiApiKey: !!process.env.GEMINI_API_KEY,

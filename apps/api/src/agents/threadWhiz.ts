@@ -1,4 +1,7 @@
 import { LlmAgent, stringifyContent } from '@google/adk';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('thread_whiz');
 
 export const threadWhiz = new LlmAgent({
     name: 'thread_whiz',
@@ -7,7 +10,7 @@ export const threadWhiz = new LlmAgent({
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];
         const research = raw ? stringifyContent(raw as any) : '(no research available)';
-        console.log('[DEBUG:thread_whiz] instruction called', {
+        log.debug('instruction called', {
             hasResearch: !!raw,
             researchSnippet: research.slice(0, 200),
         });

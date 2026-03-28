@@ -1,4 +1,7 @@
 import { LlmAgent, stringifyContent } from '@google/adk';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('the_professional');
 
 export const theProfessional = new LlmAgent({
     name: 'the_professional',
@@ -7,7 +10,7 @@ export const theProfessional = new LlmAgent({
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];
         const research = raw ? stringifyContent(raw as any) : '(no research available)';
-        console.log('[DEBUG:the_professional] instruction called', {
+        log.debug('instruction called', {
             hasResearch: !!raw,
             researchSnippet: research.slice(0, 200),
         });

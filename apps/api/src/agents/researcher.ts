@@ -1,5 +1,8 @@
 import { LlmAgent, GOOGLE_SEARCH } from '@google/adk';
 import {webScrapeTool} from "../tools/scraper.js";
+import { createLogger } from '../logger.js';
+
+const log = createLogger('researcher');
 
 export const researcher = new LlmAgent({
     name: 'researcher',
@@ -8,7 +11,7 @@ export const researcher = new LlmAgent({
     instruction: (ctx) => {
         const existingOutput = ctx.invocationContext.session.state['researcher_output'];
         const judgeOutput = ctx.invocationContext.session.state['judge_output'];
-        console.log('[DEBUG:researcher] instruction called', {
+        log.debug('instruction called', {
             hasExistingOutput: !!existingOutput,
             hasJudgeFeedback: !!judgeOutput,
             judgeFeedback: judgeOutput ? JSON.stringify(judgeOutput) : null,

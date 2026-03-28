@@ -4,6 +4,9 @@ import {
     createEvent,
     createEventActions,
 } from '@google/adk';
+import { createLogger } from '../logger.js';
+
+const log = createLogger('escalation_checker');
 
 export default class EscalationChecker extends BaseAgent {
     protected async *runAsyncImpl(ctx: InvocationContext) {
@@ -11,7 +14,7 @@ export default class EscalationChecker extends BaseAgent {
             | { status?: string; feedback?: string }
             | undefined;
 
-        console.log('[DEBUG:escalation_checker] judge_output from state', {
+        log.debug('judge_output from state', {
             type: typeof lastOutput,
             value: JSON.stringify(lastOutput),
             parsedStatus: lastOutput?.status,
