@@ -17,14 +17,6 @@ const log = createLogger('server');
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env'), override: false });
 
 // Normalize API key env var across expected names for @google/genai/@google/adk
-(() => {
-  const key = process.env.GEMINI_API_KEY;
-  if (key) {
-    if (!process.env.GOOGLE_GENAI_API_KEY) process.env.GOOGLE_GENAI_API_KEY = key;
-    if (!process.env.GEMINI_API_KEY) process.env.GEMINI_API_KEY = key;
-  }
-})();
-
 const app = express();
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
 const appName = process.env.APP_NAME || 'ts-multi-agents';
@@ -198,7 +190,6 @@ app.listen(port, () => {
   log.info(`API listening on :${port}`);
   log.debug('Environment variables check', {
     cwd: process.cwd(),
-    hasGoogleApiKey: !!process.env.GOOGLE_GENAI_API_KEY,
     hasGeminiApiKey: !!process.env.GEMINI_API_KEY,
   });
 });

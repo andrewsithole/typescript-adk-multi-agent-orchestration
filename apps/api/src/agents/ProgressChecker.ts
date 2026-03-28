@@ -28,6 +28,21 @@ export default class ProgressWrapper extends BaseAgent {
         for await (const event of this.inner.runAsync(ctx)) {
             const parts = event.content?.parts ?? [];
             const textSnippet = parts.map((p: any) => p.text ?? '').join('').slice(0, 120);
+            if((event as any).errorCode){
+                log.error('event received', {
+                    agent: this.name,
+                    author: event.author,
+                    partial: event.partial ?? false,
+                    functionCalls: getFunctionCalls(event).map((c: any) => c.name),
+                    functionResponses: getFunctionResponses(event).map((r: any) => r.name),
+                    stateDeltaKeys: Object.keys(event.actions?.stateDelta ?? {}),
+                    hasContent: !!event.content,
+                    partCount: parts.length,
+                    textSnippet,
+                    errorCode: (event as any).errorCode,
+                    errorMessage: (event as any).errorMessage,
+                });
+            }
             log.debug('event received', {
                 agent: this.name,
                 author: event.author,

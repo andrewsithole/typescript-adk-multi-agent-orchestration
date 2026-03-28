@@ -25,7 +25,6 @@ if (process.env.LOG_FILE === 'true') {
         new DailyRotateFile({
             filename: 'logs/%DATE%.log',
             datePattern: 'YYYY-MM-DD',
-            format: json(),
             maxFiles: '14d',
         })
     );
