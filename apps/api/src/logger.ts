@@ -1,5 +1,9 @@
+import dotenv from 'dotenv';
+import path from 'node:path';
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
+
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
 const { combine, colorize, timestamp, printf, json } = winston.format;
 
@@ -12,25 +16,26 @@ const consoleFormat = combine(
     })
 );
 
+const transports: winston.transport[] = [
+    new winston.transports.Console({ format: consoleFormat }),
+];
+
+if (process.env.LOG_FILE === 'true') {
+    transports.push(
+        new DailyRotateFile({
+            filename: 'logs/%DATE%.log',
+            datePattern: 'YYYY-MM-DD',
+            format: json(),
+            maxFiles: '14d',
+        })
+    );
+}
+
+const root = winston.createLogger({
+    level: process.env.LOG_LEVEL || 'info',
+    transports,
+});
+
 export function createLogger(context: string) {
-    const transports: winston.transport[] = [
-        new winston.transports.Console({ format: consoleFormat }),
-    ];
-
-    if (process.env.LOG_FILE === 'true') {
-        transports.push(
-            new DailyRotateFile({
-                filename: 'logs/%DATE%.log',
-                datePattern: 'YYYY-MM-DD',
-                format: json(),
-                maxFiles: '14d',
-            })
-        );
-    }
-
-    return winston.createLogger({
-        level: process.env.LOG_LEVEL || 'info',
-        defaultMeta: { context },
-        transports,
-    });
+    return root.child({ context });
 }
