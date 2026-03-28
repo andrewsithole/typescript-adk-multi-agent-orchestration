@@ -19,7 +19,10 @@ export const judge = new LlmAgent({
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];
         const research = raw ? stringifyContent(raw as any) : '(no research available)';
-        console.log("Judge received research to evaluate:", research);
+        console.log('[DEBUG:judge] received research to evaluate', {
+            hasResearch: !!raw,
+            researchSnippet: research.slice(0, 200),
+        });
         return `Evaluate the following research for its potential to create high-quality social media content.
         
         Assign a score from 0 to 10 for each of the following criteria:

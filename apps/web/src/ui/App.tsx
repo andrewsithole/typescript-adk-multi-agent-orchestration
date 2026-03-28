@@ -112,16 +112,17 @@ export function AppContent() {
         }
         if (data.text) {
           const author = data.author?.toLowerCase() || '';
-          const isTwitter = author.includes('thread_whiz') || author.includes('twitter');
-          const isLinkedin = author.includes('the_professional') || author.includes('linkedin');
+          const isTwitterContent = author === 'thread_whiz' || author === 'twitter';
+          const isLinkedinContent = author === 'the_professional' || author === 'linkedin';
           
-          // Only add to activity log if not a final formatter output
-          if (!isTwitter && !isLinkedin) {
+          // Add to activity log if it's NOT the final content from formatters.
+          // Progress messages and search tool logs should always show in the log.
+          if (!isTwitterContent && !isLinkedinContent) {
             dispatch({ type: 'ADD_EVENT', payload: mkEvent('agent', data.text, data.author) });
           }
           
-          if (isTwitter && data.text.length > 50) dispatch({ type: 'UPDATE_TWITTER', payload: data.text });
-          if (isLinkedin && data.text.length > 50) dispatch({ type: 'UPDATE_LINKEDIN', payload: data.text });
+          if (isTwitterContent && data.text.length > 50) dispatch({ type: 'UPDATE_TWITTER', payload: data.text });
+          if (isLinkedinContent && data.text.length > 50) dispatch({ type: 'UPDATE_LINKEDIN', payload: data.text });
         }
         data.calls?.forEach(c => dispatch({ type: 'ADD_EVENT', payload: mkEvent('tool_call', c, data.author) }));
         data.responses?.forEach(r => dispatch({ type: 'ADD_EVENT', payload: mkEvent('tool_response', r) }));

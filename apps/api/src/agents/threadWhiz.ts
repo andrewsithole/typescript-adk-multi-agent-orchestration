@@ -7,7 +7,11 @@ export const threadWhiz = new LlmAgent({
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];
         const research = raw ? stringifyContent(raw as any) : '(no research available)';
-        
+        console.log('[DEBUG:thread_whiz] instruction called', {
+            hasResearch: !!raw,
+            researchSnippet: research.slice(0, 200),
+        });
+
         return `You are "Thread-Whiz", a viral content creator. Your goal is to turn the following research into a high-engagement Twitter/X thread.
 
 Guidelines:

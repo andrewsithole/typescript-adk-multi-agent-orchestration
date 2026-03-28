@@ -128,15 +128,16 @@ app.get('/api/run/stream', async (req, res) => {
 
         // Capture outputs from stateDelta as they arrive — before any suppress logic.
         const delta = event.actions?.stateDelta as Record<string, unknown> | undefined;
+        let deltaUpdate = false;
         if (delta) {
           const getVal = (val: any) => {
             if (!val) return undefined;
             if (typeof val === 'string') return val;
             return stringifyContent(val);
           };
-          if (delta['judge_output']) accJudgeOutput = getVal(delta['judge_output']);
-          if (delta['twitter_output']) accTwitterOutput = getVal(delta['twitter_output']);
-          if (delta['linkedin_output']) accLinkedinOutput = getVal(delta['linkedin_output']);
+          if (delta['judge_output']) { accJudgeOutput = getVal(delta['judge_output']); deltaUpdate = true; }
+          if (delta['twitter_output']) { accTwitterOutput = getVal(delta['twitter_output']); deltaUpdate = true; }
+          if (delta['linkedin_output']) { accLinkedinOutput = getVal(delta['linkedin_output']); deltaUpdate = true; }
         }
 
         const text = stringifyContent(event);
@@ -145,13 +146,11 @@ app.get('/api/run/stream', async (req, res) => {
         const responses = getFunctionResponses(event) || [];
         const escalate = Boolean(event.actions?.escalate);
 
-        // Inner agents (researcher, judge, etc.) are wrapped by ProgressWrapper which
-        // emits its own progress messages. Suppress their raw LLM text here but
-        // still forward tool calls so the UI can show search activity.
-        // NOTE: We allow formatters (thread_whiz, the_professional) to pass through
-        // so the UI can capture their text directly if session state is delayed.
+        // Suppress raw LLM text from the research/evaluation agents since they are wrapped by ProgressWrapper.
+        // We allow ':progress' messages to pass through to the activity log.
         const SUPPRESS_TEXT_FROM = new Set(['researcher', 'judge']);
-        if (SUPPRESS_TEXT_FROM.has(author) && calls.length === 0 && responses.length === 0 && !escalate) {
+        const isProgress = author.endsWith('_progress');
+        if (!isProgress && SUPPRESS_TEXT_FROM.has(author) && calls.length === 0 && responses.length === 0 && !escalate && !deltaUpdate) {
           continue;
         }
 

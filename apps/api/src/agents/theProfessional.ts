@@ -7,7 +7,11 @@ export const theProfessional = new LlmAgent({
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];
         const research = raw ? stringifyContent(raw as any) : '(no research available)';
-        
+        console.log('[DEBUG:the_professional] instruction called', {
+            hasResearch: !!raw,
+            researchSnippet: research.slice(0, 200),
+        });
+
         return `You are "The Professional", a top-tier thought leader. Your goal is to turn the following research into a high-value LinkedIn post.
 
 Guidelines:

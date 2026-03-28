@@ -14,8 +14,8 @@ import ProgressWrapper from "./ProgressChecker.js";
 const researchLoop = new LoopAgent({
     name: 'research_loop',
     subAgents: [
-        new ProgressWrapper(researcher, 'Starting research…', 'Research complete.', { name: 'researcher_wrapper' }),
-        new ProgressWrapper(judge, 'Evaluating quality…', 'Evaluation done.', { name: 'judge_wrapper' }),
+        new ProgressWrapper(researcher, 'Starting research…', 'Research complete.', { name: 'researcher_progress' }),
+        new ProgressWrapper(judge, 'Evaluating quality…', 'Evaluation done.', { name: 'judge_progress' }),
         new EscalationChecker({ name: 'checker' }),
     ],
     maxIterations: 3,
@@ -25,8 +25,8 @@ const researchLoop = new LoopAgent({
 const formatters = new ParallelAgent({
     name: 'formatters',
     subAgents: [
-        new ProgressWrapper(threadWhiz, 'Crafting Twitter thread…', 'Twitter thread ready.', { name: 'twitter_wrapper' }),
-        new ProgressWrapper(theProfessional, 'Writing LinkedIn post…', 'LinkedIn post ready.', { name: 'linkedin_wrapper' }),
+        new ProgressWrapper(threadWhiz, 'Crafting Twitter thread…', 'Twitter thread ready.', { name: 'twitter_progress' }),
+        new ProgressWrapper(theProfessional, 'Writing LinkedIn post…', 'LinkedIn post ready.', { name: 'linkedin_progress' }),
     ],
 });
 

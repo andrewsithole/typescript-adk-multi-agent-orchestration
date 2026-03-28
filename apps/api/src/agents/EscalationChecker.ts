@@ -11,6 +11,13 @@ export default class EscalationChecker extends BaseAgent {
             | { status?: string; feedback?: string }
             | undefined;
 
+        console.log('[DEBUG:escalation_checker] judge_output from state', {
+            type: typeof lastOutput,
+            value: JSON.stringify(lastOutput),
+            parsedStatus: lastOutput?.status,
+            willEscalate: lastOutput?.status === 'pass',
+        });
+
         if (lastOutput?.status === 'pass') {
             // Signal the LoopAgent to exit by setting actions.escalate = true
             yield createEvent({

@@ -42,7 +42,8 @@ export function authorColor(name?: string): string {
 
 export function authorLabel(name?: string): string {
   if (!name) return 'system'
-  return name.replace(/_/g, ' ')
+  // Remove :progress suffix and replace underscores
+  return name.replace('_progress', '').replace(/_/g, ' ')
 }
 
 let _eid = 0
