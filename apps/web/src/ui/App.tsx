@@ -81,9 +81,33 @@ export function AppContent() {
     }
   }, [dispatch]);
 
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     if (!query.trim() || query.length > 2000) return;
     if (esRef.current) esRef.current.close();
+
+    // Probe for an existing active stream to provide a friendly message
+    const probe = new URL('/api/run/probe', window.location.origin);
+    probe.searchParams.set('userId', uidRef.current);
+    probe.searchParams.set('sessionId', sidRef.current);
+    probe.searchParams.set('q', query);
+    try {
+      const resp = await fetch(probe.toString(), { method: 'GET' });
+      if (resp.status === 409) {
+        dispatch({ type: 'ADD_EVENT', payload: mkEvent('system', 'Another run is already active for this session. Please wait, stop it, or start a new session.') });
+        dispatch({ type: 'STOP_RUN' });
+        return;
+      }
+      if (!resp.ok && resp.status !== 204) {
+        const msg = `Unable to start: ${resp.status} ${resp.statusText}`;
+        dispatch({ type: 'ADD_EVENT', payload: mkEvent('error', msg) });
+        dispatch({ type: 'STOP_RUN' });
+        return;
+      }
+    } catch (e) {
+      dispatch({ type: 'ADD_EVENT', payload: mkEvent('error', 'Network error while starting run') });
+      dispatch({ type: 'STOP_RUN' });
+      return;
+    }
 
     dispatch({ type: 'START_RUN' });
     const url = new URL('/api/run/stream', window.location.origin);
@@ -95,59 +119,63 @@ export function AppContent() {
 
     const es = new EventSource(url.toString());
 
+    const handleFrame = (data: Frame, finalize: boolean = false) => {
+      if (data.error) {
+        dispatch({ type: 'ADD_EVENT', payload: mkEvent('error', data.error) });
+        es.close();
+        esRef.current = null;
+        dispatch({ type: 'STOP_RUN' });
+        return;
+      }
+      if (data.text) {
+        const author = data.author?.toLowerCase() || '';
+        const isTwitterContent = author === 'thread_whiz' || author === 'twitter';
+        const isLinkedinContent = author === 'the_professional' || author === 'linkedin';
+
+        if (!isTwitterContent && !isLinkedinContent) {
+          dispatch({ type: 'ADD_EVENT', payload: mkEvent('agent', data.text, data.author) });
+        }
+
+        if (isTwitterContent && data.text.length > 50) dispatch({ type: 'UPDATE_TWITTER', payload: data.text });
+        if (isLinkedinContent && data.text.length > 50) dispatch({ type: 'UPDATE_LINKEDIN', payload: data.text });
+      }
+      data.calls?.forEach(c => dispatch({ type: 'ADD_EVENT', payload: mkEvent('tool_call', c, data.author) }));
+      data.responses?.forEach(r => dispatch({ type: 'ADD_EVENT', payload: mkEvent('tool_response', r) }));
+      if (data.escalate) dispatch({ type: 'ADD_EVENT', payload: mkEvent('escalate', '', data.author) });
+
+      if (data.twitter_output) dispatch({ type: 'UPDATE_TWITTER', payload: String(data.twitter_output) });
+      if (data.linkedin_output) dispatch({ type: 'UPDATE_LINKEDIN', payload: String(data.linkedin_output) });
+      if (data.judge_output) dispatch({ type: 'ADD_EVENT', payload: mkEvent('judge', String(data.judge_output)) });
+
+      if (finalize || data.done) {
+        es.close();
+        esRef.current = null;
+        dispatch({ type: 'STOP_RUN' });
+        dispatch({ type: 'ADD_EVENT', payload: mkEvent('system', 'Completed') });
+      }
+    };
+
     es.onopen = () => {
       dispatch({ type: 'ADD_EVENT', payload: mkEvent('system', 'Connected') });
     };
 
-    es.onmessage = (ev) => {
-      try {
-        const data: Frame = JSON.parse(ev.data);
-        if (data.error) {
-          dispatch({ type: 'ADD_EVENT', payload: mkEvent('error', data.error) });
-          // Stop run on error and close stream
-          es.close();
-          esRef.current = null;
-          dispatch({ type: 'STOP_RUN' });
-          return;
-        }
-        if (data.text) {
-          const author = data.author?.toLowerCase() || '';
-          const isTwitterContent = author === 'thread_whiz' || author === 'twitter';
-          const isLinkedinContent = author === 'the_professional' || author === 'linkedin';
-          
-          // Add to activity log if it's NOT the final content from formatters.
-          // Progress messages and search tool logs should always show in the log.
-          if (!isTwitterContent && !isLinkedinContent) {
-            dispatch({ type: 'ADD_EVENT', payload: mkEvent('agent', data.text, data.author) });
-          }
-          
-          if (isTwitterContent && data.text.length > 50) dispatch({ type: 'UPDATE_TWITTER', payload: data.text });
-          if (isLinkedinContent && data.text.length > 50) dispatch({ type: 'UPDATE_LINKEDIN', payload: data.text });
-        }
-        data.calls?.forEach(c => dispatch({ type: 'ADD_EVENT', payload: mkEvent('tool_call', c, data.author) }));
-        data.responses?.forEach(r => dispatch({ type: 'ADD_EVENT', payload: mkEvent('tool_response', r) }));
-        if (data.escalate) dispatch({ type: 'ADD_EVENT', payload: mkEvent('escalate', '', data.author) });
-        
-        // Update outputs if present in the frame
-        if (data.twitter_output) dispatch({ type: 'UPDATE_TWITTER', payload: String(data.twitter_output) });
-        if (data.linkedin_output) dispatch({ type: 'UPDATE_LINKEDIN', payload: String(data.linkedin_output) });
-        
-        if (data.judge_output) {
-          dispatch({ type: 'ADD_EVENT', payload: mkEvent('judge', String(data.judge_output)) });
-        }
+    // Named SSE events from server
+    es.addEventListener('progress', (ev: MessageEvent) => {
+      try { handleFrame(JSON.parse(ev.data)); } catch (e) { console.error('SSE parse error', e); }
+    });
+    es.addEventListener('final', (ev: MessageEvent) => {
+      try { handleFrame(JSON.parse(ev.data), true); } catch (e) { console.error('SSE parse error', e); }
+    });
+    es.addEventListener('error', (ev: MessageEvent) => {
+      try { handleFrame(JSON.parse(ev.data)); } catch (e) { console.error('SSE parse error', e); }
+    });
 
-        // If server signals completion, stop loading and close stream
-        if (data.done) {
-          es.close();
-          esRef.current = null;
-          dispatch({ type: 'STOP_RUN' });
-          dispatch({ type: 'ADD_EVENT', payload: mkEvent('system', 'Completed') });
-        }
-      } catch (e) {
-        console.error('SSE parse error', e);
-      }
+    // Backward compatibility: unnamed events (if server sends default messages)
+    es.onmessage = (ev) => {
+      try { handleFrame(JSON.parse(ev.data)); } catch (e) { /* ignore */ }
     };
 
+    // Network/connection errors
     es.onerror = () => {
       es.close();
       esRef.current = null;
