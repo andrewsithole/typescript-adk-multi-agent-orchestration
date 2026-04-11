@@ -5,7 +5,7 @@ import DailyRotateFile from 'winston-daily-rotate-file';
 
 dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
 
-const { combine, colorize, timestamp, printf, json } = winston.format;
+const { combine, colorize, timestamp, printf } = winston.format;
 
 const consoleFormat = combine(
     colorize({ all: true }),
@@ -25,6 +25,12 @@ if (process.env.LOG_FILE === 'true') {
         new DailyRotateFile({
             filename: 'logs/%DATE%.log',
             datePattern: 'YYYY-MM-DD',
+            format: combine(
+                timestamp(),
+                printf(({ timestamp: ts, level, message, ...meta }) =>
+                    JSON.stringify({ timestamp: ts, level, message, ...meta })
+                )
+            ),
             maxFiles: '14d',
         })
     );

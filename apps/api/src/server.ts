@@ -139,7 +139,7 @@ app.get('/api/run/stream', async (req, res) => {
 
         // Suppress raw LLM text from the research/evaluation agents since they are wrapped by ProgressWrapper.
         // We allow ':progress' messages to pass through to the activity log.
-        const SUPPRESS_TEXT_FROM = new Set(['researcher', 'judge']);
+        const SUPPRESS_TEXT_FROM = new Set(['researcher', 'researcher_search', 'researcher_scrape', 'researcher_process', 'judge']);
         const isProgress = author.endsWith('_progress');
         if (!isProgress && SUPPRESS_TEXT_FROM.has(author) && calls.length === 0 && responses.length === 0 && !escalate && !deltaUpdate) {
           continue;
