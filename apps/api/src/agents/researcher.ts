@@ -1,4 +1,4 @@
-import { BaseAgent, InvocationContext, LlmAgent, GOOGLE_SEARCH, stringifyContent } from '@google/adk';
+import { BaseAgent, InvocationContext, LlmAgent, GOOGLE_SEARCH, stringifyContent, createEvent, createEventActions } from '@google/adk';
 import { webScrapeTool } from '../tools/scraper.js';
 import { createLogger } from '../logger.js';
 
@@ -25,6 +25,7 @@ const searchAgent = new LlmAgent({
     },
     outputKey: 'researcher_output',
     tools: [GOOGLE_SEARCH],
+    includeContents: 'none',
 });
 
 // Path B: Link(s) present -> scrape first (collect content), then process using the user request.
@@ -32,15 +33,21 @@ const scrapeCollector = new LlmAgent({
     name: 'researcher_scrape',
     model: 'gemini-2.5-flash',
     description: 'Scrapes provided URLs and compiles readable text snippets.',
-    instruction: () => [
-        'You will receive a user message that may contain one or more URLs.',
-        'Identify all URLs in the user message and use the web_scrape tool to fetch each URL. '
-        + 'If multiple links are present, call the tool multiple times (once per URL).',
-        'For each page: extract the most relevant sections and keep them as clean text.',
-        'Do not summarize yet. Output a compiled, clearly delimited block per URL with the source URL heading.',
-    ].join(' '),
+    instruction: (ctx) => {
+        const urls = (ctx.invocationContext.session.state['incoming_urls'] as string[] | undefined) || [];
+        const list = urls.slice(0, 2).map((u, i) => `${i + 1}. ${u}`).join(' ');
+        return [
+            urls.length > 0
+                ? `You are given a fixed list of up to 2 URLs to scrape: ${list}`
+                : 'Identify up to 2 URLs in the user message and use the web_scrape tool to fetch each URL.',
+            'When calling web_scrape, always include parameter q set to the user\'s request, e.g., { url: <URL>, q: <user request> }.',
+            'For each page: rely on headings and the most relevant paragraphs. Keep clean text; no code, no scripts.',
+            'Do not summarize yet. Output a compiled, clearly delimited block per URL with the source URL heading.',
+        ].join(' ');
+    },
     outputKey: 'scraped_content',
     tools: [webScrapeTool],
+    includeContents: 'none',
 });
 
 const processAgent = new LlmAgent({
@@ -63,6 +70,7 @@ const processAgent = new LlmAgent({
     },
     outputKey: 'researcher_output',
     // No tools here — pure processing using provided content.
+    includeContents: 'none',
 });
 
 class ConditionalResearcher extends BaseAgent {
@@ -79,6 +87,17 @@ class ConditionalResearcher extends BaseAgent {
         const urls = Array.from(text.matchAll(urlRegex)).map(m => m[0]);
         const hasUrl = urls.length > 0;
         log.debug('router decision', { hasUrl, urlCount: urls.length });
+
+        // Reset ephemeral keys and pass parsed URLs to state to prevent stale reuse.
+        yield createEvent({
+            author: this.name,
+            content: { role: 'model', parts: [{ text: hasUrl ? `Found ${urls.length} URL(s); preparing scrape…` : 'No URLs found; starting search…' }] },
+            actions: createEventActions({ stateDelta: {
+                incoming_urls: urls.slice(0, 2),
+                scraped_content: null,
+                researcher_output: null,
+            }})
+        });
 
         if (hasUrl) {
             // Scrape first, then process with the user request + scraped content.

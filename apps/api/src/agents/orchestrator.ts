@@ -1,14 +1,19 @@
 import {
     SequentialAgent,
     LoopAgent,
-    ParallelAgent,
 } from '@google/adk';
 import EscalationChecker from './EscalationChecker.js';
 import { researcher } from './researcher.js';
 import { judge } from './judge.js';
-import { threadWhiz } from './threadWhiz.js';
-import { theProfessional } from './theProfessional.js';
 import ProgressWrapper from "./ProgressChecker.js";
+import FormattersGate from "./FormattersGate.js";
+
+// Allow basic tuning via environment variable without code changes (fallback to 3)
+const RESEARCH_LOOP_MAX = (() => {
+    const v = Number(process.env.RESEARCH_LOOP_MAX || '3');
+    if (Number.isFinite(v) && v > 0 && v <= 10) return Math.floor(v);
+    return 3;
+})();
 
 // 1. Create the Research Loop (Researcher -> Judge -> Checker)
 const researchLoop = new LoopAgent({
@@ -18,21 +23,13 @@ const researchLoop = new LoopAgent({
         new ProgressWrapper(judge, 'Evaluating quality…', 'Evaluation done.', { name: 'judge_progress' }),
         new EscalationChecker({ name: 'checker' }),
     ],
-    maxIterations: 3,
+    maxIterations: RESEARCH_LOOP_MAX,
 });
 
-// 2. Create the Formatting Layer (Twitter & LinkedIn in parallel)
-const formatters = new ParallelAgent({
-    name: 'formatters',
-    subAgents: [
-        new ProgressWrapper(threadWhiz, 'Crafting Twitter thread…', 'Twitter thread ready.', { name: 'twitter_progress' }),
-        new ProgressWrapper(theProfessional, 'Writing LinkedIn post…', 'LinkedIn post ready.', { name: 'linkedin_progress' }),
-    ],
-});
 
 // 3. Create the Final Pipeline
 export const hypeSquadCreator = new SequentialAgent({
     name: 'hype_squad',
     description: 'Researches a topic and generates viral social media content.',
-    subAgents: [researchLoop, formatters],
+    subAgents: [researchLoop, new FormattersGate()],
 });
