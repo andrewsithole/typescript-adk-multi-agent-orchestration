@@ -21,7 +21,11 @@ export const judge = new LlmAgent({
     description: 'Evaluates research findings for social media potential.',
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];
-        const research = raw ? stringifyContent(raw as any) : '(no research available)';
+        const research = !raw
+            ? '(no research available)'
+            : typeof raw === 'string'
+                ? raw
+                : stringifyContent(raw as any);
         log.debug('received research to evaluate', {
             hasResearch: !!raw,
             researchSnippet: research.slice(0, 200),

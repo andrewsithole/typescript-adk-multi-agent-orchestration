@@ -13,15 +13,18 @@ const searchAgent = new LlmAgent({
     description: 'Uses Google Search to find authoritative sources and candidate pages.',
     instruction: (ctx) => {
         const judgeOutput = ctx.invocationContext.session.state['judge_output'];
+        const userQuery = ctx.invocationContext.session.state['user_query'] as string | undefined;
         log.debug('instruction called (search)', {
             hasJudgeFeedback: !!judgeOutput,
             judgeFeedback: judgeOutput ? JSON.stringify(judgeOutput) : null,
+            userQuery: userQuery?.slice(0, 100),
         });
         return [
             'You are an expert web researcher focused on precision and credibility.',
-            'Use google_search to locate the most relevant, recent, and authoritative pages for the user request.',
+            userQuery ? `The user's request is: "${userQuery}".` : '',
+            'Use google_search to locate the most relevant, recent, and authoritative pages for this request.',
             'Return a concise summary of findings with 3–6 cited URLs. Do not use any other tools.',
-        ].join(' ');
+        ].filter(Boolean).join(' ');
     },
     outputKey: 'researcher_output',
     tools: [GOOGLE_SEARCH],
@@ -56,7 +59,11 @@ const processAgent = new LlmAgent({
     description: 'Processes scraped content according to the user request and produces final research output.',
     instruction: (ctx) => {
         const scraped = ctx.invocationContext.session.state['scraped_content'];
-        const scrapedText = scraped ? stringifyContent(scraped as any) : '(no scraped content)';
+        const scrapedText = !scraped
+                ? '(no scraped content)'
+                : typeof scraped === 'string'
+                    ? scraped
+                    : stringifyContent(scraped as any);
         log.debug('instruction called (process)', {
             hasScraped: !!scraped,
             scrapedSnippet: scrapedText.slice(0, 160),
@@ -89,6 +96,8 @@ class ConditionalResearcher extends BaseAgent {
         log.debug('router decision', { hasUrl, urlCount: urls.length });
 
         // Reset ephemeral keys and pass parsed URLs to state to prevent stale reuse.
+        // Also persist the user query so sub-agents with includeContents:'none' can read it.
+        const queryText = text.replace(urlRegex, '').trim() || text;
         yield createEvent({
             author: this.name,
             content: { role: 'model', parts: [{ text: hasUrl ? `Found ${urls.length} URL(s); preparing scrape…` : 'No URLs found; starting search…' }] },
@@ -96,10 +105,12 @@ class ConditionalResearcher extends BaseAgent {
                 incoming_urls: urls.slice(0, 2),
                 scraped_content: null,
                 researcher_output: null,
+                user_query: queryText,
             }})
         });
 
         if (hasUrl) {
+            console.log(`Researcher found URLs, running scrape and process agents. URLs: ${urls.join(', ')}`);
             // Scrape first, then process with the user request + scraped content.
             for await (const ev of scrapeCollector.runAsync(ctx)) {
                 yield ev;
@@ -108,6 +119,7 @@ class ConditionalResearcher extends BaseAgent {
                 yield ev;
             }
         } else {
+            console.log('Researcher found no URLs, running search agent only.');
             // No link: do search only and produce the final research output.
             for await (const ev of searchAgent.runAsync(ctx)) {
                 yield ev;

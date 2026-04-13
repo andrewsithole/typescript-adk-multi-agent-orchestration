@@ -5,9 +5,10 @@ This README explains how the `apps/api` service is put together, what the endpoi
 ---
 
 ## Overview
-- Express server that orchestrates a multi-agent workflow (research -> judging -> content formatting).
+- Express server that showcases AI agent orchestration end-to-end, highlighting how sequential, looping, and parallel agents collaborate.
+- Demonstrates tooling within the agent network, including Google Search (`google_search` built-in) and custom FunctionTools (e.g., the `web_scrape` HTML fetcher).
 - Uses `@google/adk` for agent execution, `zod` for runtime validation, and Server-Sent Events (SSE) for live updates.
-- Sessions and rate limiting are handled purely in memory; restart = clean slate.
+- Sessions and rate limiting are handled purely in memory; restart = clean slate so you can observe fresh orchestrations.
 
 ### Directory Highlights
 - `src/server.ts` - Express entry point, routes, rate limiting, SSE wiring.
