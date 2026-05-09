@@ -1,11 +1,12 @@
 import { LlmAgent, stringifyContent } from '@google/adk';
-import { createLogger } from '../logger.js';
+import { createLogger } from '../core/logger.js';
+import { CONFIG } from '../core/config.js';
 
 const log = createLogger('the_professional');
 
 export const theProfessional = new LlmAgent({
     name: 'the_professional',
-    model: 'gemini-2.5-flash',
+    model: CONFIG.DEFAULT_MODEL,
     description: 'Creates authoritative LinkedIn posts from research.',
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];

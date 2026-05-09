@@ -1,11 +1,12 @@
 import { LlmAgent, stringifyContent } from '@google/adk';
-import { createLogger } from '../logger.js';
+import { createLogger } from '../core/logger.js';
+import { CONFIG } from '../core/config.js';
 
 const log = createLogger('thread_whiz');
 
 export const threadWhiz = new LlmAgent({
     name: 'thread_whiz',
-    model: 'gemini-2.5-flash',
+    model: CONFIG.DEFAULT_MODEL,
     description: 'Creates punchy Twitter/X threads from research.',
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];

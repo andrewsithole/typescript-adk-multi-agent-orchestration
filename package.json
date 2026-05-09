@@ -14,5 +14,7 @@
   },
   "type": "module",
   "private": true,
-  "devDependencies": {}
+  "dependencies": {
+    "skills": "^1.5.6"
+  }
 }
