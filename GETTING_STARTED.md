@@ -4,7 +4,7 @@
   <h3>
     <a href="./README.md">🏠 Home</a> | 
     <b>Step 0: Intro</b> | 
-    <a href="#2-setup">Next Step ➡️</a>
+    <a href="./01_SETUP.md">Next Step ➡️</a>
   </h3>
 </div>
 
@@ -13,15 +13,15 @@
 
 ### 🛠 The Path to Hype Squad
 1.  **[Introduction](#1-introduction)** (Current)
-2.  **[Setup](#2-setup)**
-3.  **[Step 1: The Researcher](./GETTING_STARTED.md)** (Coming soon)
-4.  **[Step 2: The Judge](./GETTING_STARTED.md)** (Coming soon)
-5.  **[Step 3: Loop Orchestration](./GETTING_STARTED.md)** (Coming soon)
-6.  **[Step 4: Parallel Formatters](./GETTING_STARTED.md)** (Coming soon)
-7.  **[Step 5: The Gatekeeper](./GETTING_STARTED.md)** (Coming soon)
-8.  **[Step 6: Progress & Feedback](./GETTING_STARTED.md)** (Coming soon)
-9.  **[Step 7: Final Assembly](./GETTING_STARTED.md)** (Coming soon)
-10. **[Step 8: Refactoring for Production](./GETTING_STARTED.md)** (Coming soon)
+2.  **[Step 1: Setup](./01_SETUP.md)**
+3.  **[Step 2: The Researcher](./02_RESEARCHER.md)** (Coming soon)
+4.  **[Step 3: The Judge](./03_JUDGE.md)** (Coming soon)
+5.  **[Step 4: Loop Orchestration](./04_LOOP.md)** (Coming soon)
+6.  **[Step 5: Parallel Formatters](./05_PARALLEL.md)** (Coming soon)
+7.  **[Step 6: The Gatekeeper](./06_GATEKEEPER.md)** (Coming soon)
+8.  **[Step 7: Progress & Feedback](./07_PROGRESS.md)** (Coming soon)
+9.  **[Step 8: Final Assembly](./08_ASSEMBLY.md)** (Coming soon)
+10. **[Step 9: Refactoring for Production](./09_REFACTOR.md)** (Coming soon)
 
 ---
 </details>
@@ -58,59 +58,5 @@ You will start with a skeleton project and gradually construct a complete backen
 *   Familiarity with Express.js (helpful but not required).
 
 <div align="right">
-  <a href="#2-setup"><b>Next: Step 1 - Setup ➡️</b></a>
+  <a href="./01_SETUP.md"><b>Next: Step 1 - Setup ➡️</b></a>
 </div>
-
----
-
-## 2. Setup
-
-To build the Hype Squad, you'll need a solid foundation. Follow these steps to prepare your development environment.
-
-### 1. Clone the Starter Project
-We've prepared a skeleton repository with the frontend and API structure already in place so you can focus on the agents.
-
-```bash
-git clone https://github.com/andrewsithole/typescript-adk-multi-agent-orchestration
-cd ts-multi-agents
-```
-
-### 2. Install Dependencies
-This project uses a monorepo structure. You can install all dependencies for both the API and the Web client from the root.
-
-```bash
-npm install
-```
-
-### 3. Configure your API Key
-The system is powered by Google's Gemini models. You'll need an API key from Google AI Studio.
-
-1.  Go to [aistudio.google.com](https://aistudio.google.com/).
-2.  Click **"Create API key"** and create a new key.
-3.  In the root of your project, create a `.env` file:
-    ```bash
-    cp .env.example .env
-    ```
-4.  Open `.env` and paste your key:
-    ```env
-    GEMINI_API_KEY=your_key_here
-    ```
-
-> 💡 **Using OpenAI or Claude?** If you prefer to use other models like GPT-4o or Claude 3.5 Sonnet, see our [Alternative Models Setup Guide](./MODELS_SETUP.md).
-
-### 4. Project Structure
-Take a moment to explore the `apps/api/src` directory. This is where the magic happens:
-- **`/agents`**: This will house our specialized agents (Researcher, Judge, etc.).
-- **`/core`**: Configuration, logging, and dependency injection setup.
-- **`/modules`**: The Express API logic, split into feature-based modules like `run` and `session`.
-
-### 5. Port Availability
-Before starting, ensure that ports **3000** (API) and **5173** (Web) are free. If you have other projects running on these ports, you may see an `EADDRINUSE` error.
-
-- **To check ports:** `lsof -i :3000` (macOS/Linux) or `netstat -ano | findstr :3000` (Windows).
-- **To change ports:** You can update the `PORT` variable in your `.env` file for the API.
-
----
-
-## 3. Step 1: The Researcher
-*(Next: Implementing the Researcher agent)*

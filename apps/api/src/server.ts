@@ -5,8 +5,6 @@ import { Logger } from './core/logger.js';
 import sessionRoutes from './modules/session/session.routes.js';
 import runRoutes from './modules/run/run.routes.js';
 import { errorHandler } from './errors/errorHandler.js';
-import dotenv from 'dotenv';
-import path from 'node:path';
 
 @injectable()
 export class Server {
@@ -21,10 +19,7 @@ export class Server {
     }
 
     private setupEnvironment() {
-        // Load .env from repo root
-        dotenv.config({ path: path.resolve(process.cwd(), '../../.env'), override: false });
-
-        // Normalize API key env var
+        // Normalize API key env var (dotenv already loaded in index.ts)
         const cand = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY;
         if (cand) {
             if (!process.env.GEMINI_API_KEY) process.env.GEMINI_API_KEY = cand;

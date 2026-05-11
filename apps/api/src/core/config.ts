@@ -28,7 +28,7 @@ export const CONFIG = {
         PROBE: 30,
     },
     MODELS: {
-        GEMINI_2_0_FLASH: 'gemini-3.1-flash-lite',
+        GEMINI_3_1_FLASH: 'gemini-3.1-flash-lite',
         GPT_5: 'gpt-5',
         CLAUDE_3_5_SONNET: 'claude-3-5-sonnet-20240620',
     }
