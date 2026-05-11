@@ -39,6 +39,8 @@ The system is powered by Google's Gemini models. You'll need an API key from Goo
     GEMINI_API_KEY=your_key_here
     ```
 
+> 💡 **Pro-Tip:** If you are using a brand new Google account or API key, you might occasionally see a "Quota Limit" or "Invalid Key" error for the first few minutes. This is usually just a propagation delay in Google's systems. If this happens, wait 2–5 minutes and try again.
+
 > 💡 **Using OpenAI or Claude?** If you prefer to use other models like GPT-4o or Claude 3.5 Sonnet, see our [Alternative Models Setup Guide](./MODELS_SETUP.md).
 
 ### 4. Project Structure
