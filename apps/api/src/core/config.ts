@@ -29,7 +29,7 @@ export const CONFIG = {
     },
     MODELS: {
         GEMINI_2_0_FLASH: 'gemini-3.1-flash-lite',
-        GPT_4O: 'gpt-4o',
+        GPT_5: 'gpt-5',
         CLAUDE_3_5_SONNET: 'claude-3-5-sonnet-20240620',
     }
 };
