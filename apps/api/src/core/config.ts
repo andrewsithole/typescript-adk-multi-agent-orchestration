@@ -6,8 +6,13 @@ export const CONFIG = {
     PORT: Number(process.env.PORT) || 3000,
     
     // Agent Configuration
-    DEFAULT_MODEL: 'gemini-3.1-flash-lite',
+    DEFAULT_MODEL: process.env.DEFAULT_MODEL || 'gemini-3.1-flash-lite',
     RESEARCH_LOOP_MAX: Number(process.env.RESEARCH_LOOP_MAX) || 3,
+    
+    // API Keys
+    GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY,
+    OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     
     // Session & Security
     SESSION_TTL_MS: 30 * 60_000, // 30 minutes
@@ -23,7 +28,8 @@ export const CONFIG = {
         PROBE: 30,
     },
     MODELS: {
-        GEMINI_2_5_FLASH: 'gemini-2.5-flash',
-
+        GEMINI_2_0_FLASH: 'gemini-3.1-flash-lite',
+        GPT_4O: 'gpt-4o',
+        CLAUDE_3_5_SONNET: 'claude-3-5-sonnet-20240620',
     }
 };

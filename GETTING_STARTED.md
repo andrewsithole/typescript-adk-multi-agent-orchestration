@@ -50,6 +50,7 @@ You will start with a skeleton project and gradually construct a complete backen
 1.  **Iteratively Researches:** Loops through research and evaluation until the quality threshold is met.
 2.  **Parallelizes Content:** Simultaneously generates LinkedIn and Twitter content once the research is "Judge-approved."
 3.  **Streams Feedback:** Provides real-time progress updates (e.g., "Starting research...", "Evaluating quality...") to the user via Server-Sent Events (SSE).
+4.  **Multi-Model Ready:** Swap between **Gemini**, **GPT-4o**, and **Claude 3.5 Sonnet** by simply changing an environment variable.
 
 ### Prerequisites
 *   Basic knowledge of **TypeScript** and **Node.js**.
