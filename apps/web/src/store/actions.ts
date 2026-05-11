@@ -8,6 +8,7 @@ export type Action =
   | { type: 'SET_EVENTS'; payload: ActivityEvent[] }
   | { type: 'UPDATE_TWITTER'; payload: string }
   | { type: 'UPDATE_LINKEDIN'; payload: string }
+  | { type: 'UPDATE_RESEARCHER'; payload: string }
   | { type: 'SET_SESSION_STATUS'; payload: boolean }
   | { type: 'TOGGLE_ACTIVITY'; payload?: boolean }
   | { type: 'RESET_SESSION' };

@@ -7,6 +7,7 @@ export type Frame = {
   judge_output?: any
   twitter_output?: string
   linkedin_output?: string
+  researcher_output?: string
   error?: string
   done?: boolean
 }

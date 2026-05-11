@@ -19,6 +19,7 @@ export interface StreamEvent {
     responses: string[];
     escalate: boolean;
     judge_output: string | null;
+    researcher_output: string | null;
     twitter_output: string | null;
     linkedin_output: string | null;
     done: boolean;
@@ -101,6 +102,7 @@ export class AgentService {
             responses: getFunctionResponses(event).map((r: any) => r.name),
             escalate: Boolean(event.actions?.escalate),
             judge_output: acc.judge ?? null,
+            researcher_output: acc.researcher ?? null,
             twitter_output: acc.twitter ?? null,
             linkedin_output: acc.linkedin ?? null,
             done: false,
@@ -117,6 +119,7 @@ export class AgentService {
             responses: [],
             escalate: false,
             judge_output: acc.judge ?? null,
+            researcher_output: acc.researcher ?? null,
             twitter_output: acc.twitter ?? null,
             linkedin_output: acc.linkedin ?? null,
             done: true,
@@ -127,6 +130,7 @@ export class AgentService {
 
 class OutputAccumulator {
     public judge: string | undefined;
+    public researcher: string | undefined;
     public twitter: string | undefined;
     public linkedin: string | undefined;
     public hasUpdate: boolean = false;
@@ -138,13 +142,19 @@ class OutputAccumulator {
         const delta = event.actions?.stateDelta as Record<string, any> | undefined;
         if (!delta) return;
 
-        if (delta.judge_output) { this.judge = this.toString(delta.judge_output); this.hasUpdate = true; }
+        if (delta.judge_output) { 
+            const val = delta.judge_output;
+            this.judge = (typeof val === 'object' && val !== null) ? (val.feedback || this.toString(val)) : this.toString(val); 
+            this.hasUpdate = true; 
+        }
+        if (delta.researcher_output) { this.researcher = this.toString(delta.researcher_output); this.hasUpdate = true; }
         if (delta.twitter_output) { this.twitter = this.toString(delta.twitter_output); this.hasUpdate = true; }
         if (delta.linkedin_output) { this.linkedin = this.toString(delta.linkedin_output); this.hasUpdate = true; }
 
         if (this.hasUpdate) {
             this.log.debug('State delta detected and accumulated', {
                 hasJudge: !!this.judge,
+                hasResearcher: !!this.researcher,
                 hasTwitter: !!this.twitter,
                 hasLinkedin: !!this.linkedin
             });
@@ -152,11 +162,15 @@ class OutputAccumulator {
     }
 
     async syncWithSession(service: SessionService, appName: string, userId: string, sessionId: string) {
-        if (this.judge && this.twitter && this.linkedin) return;
+        if (this.judge && this.researcher && this.twitter && this.linkedin) return;
         try {
             const session = await service.getSession({ appName, userId, sessionId });
             const st = session?.state as Record<string, any> | undefined;
-            if (!this.judge) this.judge = this.toString(st?.judge_output);
+            if (!this.judge) {
+                const val = st?.judge_output;
+                this.judge = (typeof val === 'object' && val !== null) ? (val.feedback || this.toString(val)) : this.toString(val);
+            }
+            if (!this.researcher) this.researcher = this.toString(st?.researcher_output);
             if (!this.twitter) this.twitter = this.toString(st?.twitter_output);
             if (!this.linkedin) this.linkedin = this.toString(st?.linkedin_output);
         } catch (err) {
