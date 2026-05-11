@@ -7,6 +7,8 @@ export interface State {
   events: ActivityEvent[];
   twitterOutput: string;
   linkedinOutput: string;
+  researcherOutput: string;
+  judgeOutput: string;
   hasSession: boolean;
   showActivity: boolean;
 }
@@ -17,6 +19,8 @@ export const initialState: State = {
   events: [],
   twitterOutput: '',
   linkedinOutput: '',
+  researcherOutput: '',
+  judgeOutput: '',
   hasSession: false,
   showActivity: false,
 };
@@ -31,10 +35,19 @@ export function reducer(state: State, action: Action): State {
         isLoading: true,
         twitterOutput: '',
         linkedinOutput: '',
+        researcherOutput: '',
+        judgeOutput: '',
       };
     case 'STOP_RUN':
       return { ...state, isLoading: false };
     case 'ADD_EVENT':
+      if (action.payload.kind === 'judge') {
+        return { 
+          ...state, 
+          judgeOutput: action.payload.text,
+          events: [...state.events.slice(-500), action.payload] 
+        };
+      }
       return { ...state, events: [...state.events.slice(-500), action.payload] };
     case 'SET_EVENTS':
       return { ...state, events: action.payload };
@@ -42,6 +55,8 @@ export function reducer(state: State, action: Action): State {
       return { ...state, twitterOutput: action.payload };
     case 'UPDATE_LINKEDIN':
       return { ...state, linkedinOutput: action.payload };
+    case 'UPDATE_RESEARCHER':
+      return { ...state, researcherOutput: action.payload };
     case 'SET_SESSION_STATUS':
       return { ...state, hasSession: action.payload };
     case 'TOGGLE_ACTIVITY':

@@ -1,6 +1,7 @@
 import { LlmAgent, zodObjectToSchema, stringifyContent } from '@google/adk';
 import { z } from 'zod';
-import { createLogger } from '../logger.js';
+import { createLogger } from '../core/logger.js';
+import { CONFIG } from '../core/config.js';
 
 const log = createLogger('judge');
 
@@ -17,7 +18,7 @@ export const JudgeFeedbackSchema = z.object({
 
 export const judge = new LlmAgent({
     name: 'judge',
-    model: 'gemini-2.5-flash',
+    model: CONFIG.DEFAULT_MODEL,
     description: 'Evaluates research findings for social media potential.',
     instruction: (ctx) => {
         const raw = ctx.invocationContext.session.state['researcher_output'];

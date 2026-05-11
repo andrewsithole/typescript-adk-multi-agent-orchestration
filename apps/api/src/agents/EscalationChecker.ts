@@ -4,7 +4,7 @@ import {
     createEvent,
     createEventActions,
 } from '@google/adk';
-import { createLogger } from '../logger.js';
+import { createLogger } from '../core/logger.js';
 
 const log = createLogger('escalation_checker');
 

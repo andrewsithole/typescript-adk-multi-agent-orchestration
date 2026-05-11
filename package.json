@@ -14,5 +14,10 @@
   },
   "type": "module",
   "private": true,
-  "devDependencies": {}
+  "workspaces": [
+    "apps/*"
+  ],
+  "dependencies": {
+    "skills": "^1.5.6"
+  }
 }

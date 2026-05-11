@@ -35,9 +35,9 @@ export function AppContent() {
     if (!uid) { uid = mkId('u'); try { localStorage.setItem('uid', uid) } catch {} }
     uidRef.current = uid;
 
-    let sid = stored('sid');
-    if (!sid) { sid = mkId('s'); try { localStorage.setItem('sid', sid) } catch {} }
+    const sid = mkId('s');
     sidRef.current = sid;
+    try { localStorage.setItem('sid', sid) } catch {}
   }, []);
 
   useEffect(() => {
@@ -76,13 +76,20 @@ export function AppContent() {
       dispatch({ type: 'RESET_SESSION' });
       dispatch({ type: 'SET_SESSION_STATUS', payload: true });
       dispatch({ type: 'SET_EVENTS', payload: [] });
+      return true;
     } catch (err) {
       dispatch({ type: 'ADD_EVENT', payload: mkEvent('error', (err as Error).message) });
+      return false;
     }
   }, [dispatch]);
 
   const start = useCallback(async () => {
     if (!query.trim() || query.length > 2000) return;
+    
+    // Always start with a fresh session for each generate click
+    const success = await createNewSession();
+    if (!success) return;
+
     if (esRef.current) esRef.current.close();
 
     // Probe for an existing active stream to provide a friendly message
@@ -145,6 +152,7 @@ export function AppContent() {
 
       if (data.twitter_output) dispatch({ type: 'UPDATE_TWITTER', payload: String(data.twitter_output) });
       if (data.linkedin_output) dispatch({ type: 'UPDATE_LINKEDIN', payload: String(data.linkedin_output) });
+      if (data.researcher_output) dispatch({ type: 'UPDATE_RESEARCHER', payload: String(data.researcher_output) });
       if (data.judge_output) dispatch({ type: 'ADD_EVENT', payload: mkEvent('judge', String(data.judge_output)) });
 
       if (finalize || data.done) {
@@ -300,7 +308,7 @@ export function AppContent() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: '8px 0' }}>
                 <StreamingIndicator />
                 <p style={{ margin: 0, fontSize: 14, color: C.textSub, lineHeight: 1.6 }}>
-                  {latestStatusText}
+                  <i>{latestStatusText}</i>
                 </p>
               </div>
             )}
