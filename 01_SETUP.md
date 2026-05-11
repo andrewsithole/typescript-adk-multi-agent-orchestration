@@ -28,8 +28,9 @@ npm install
 ### 3. Configure your API Key
 The system is powered by Google's Gemini models. You'll need an API key from Google AI Studio.
 
-1.  Go to [aistudio.google.com](https://aistudio.google.com/).
-2.  Click **"Create API key"** and create a new key.
+1.  Go to [aistudio.google.com](https://aistudio.google.com/). 
+    > **Note:** Signing in for the first time automatically sets up your Google AI Studio workspace. This process also creates a default Google Cloud project and a usable API key for you behind the scenes.
+2.  Click **"Get API key"** and copy your existing key (or create a new one).
 3.  In the root of your project, create a `.env` file:
     ```bash
     cp .env.example .env

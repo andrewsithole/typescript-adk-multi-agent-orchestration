@@ -1,18 +1,19 @@
 # ts-multi-agents
 
 > **🚀 Build the "Hype Squad" Multi-Agent System**  
-> This project is a hands-on Codelab. Follow the steps below to build a production-ready agent orchestration system from scratch.
+> This project is a hands-on Codelab. [**Click here to Start the Tutorial ➡️**](./GETTING_STARTED.md)
 
 | Step | Chapter | Topic | Status |
 | :--- | :--- | :--- | :--- |
-| 0️⃣ | [Introduction](./GETTING_STARTED.md#1-introduction) | Overview & Agent Roles | 🟢 Start Here |
-| 1️⃣ | [Setup](./GETTING_STARTED.md#2-setup) | Environment & Dependencies | ⚪️ Next |
-| 2️⃣ | [The Researcher](./GETTING_STARTED.md) | Tools & LlmAgents | ⚪️ Locked |
-| 3️⃣ | [The Judge](./GETTING_STARTED.md) | Structured Output & Evaluation | ⚪️ Locked |
-| 4️⃣ | [Looping Logic](./GETTING_STARTED.md) | Iterative Research & Escalation | ⚪️ Locked |
-| 5️⃣ | [Parallel Formatters](./GETTING_STARTED.md) | Multi-channel content generation | ⚪️ Locked |
-| 6️⃣ | [Gatekeepers](./GETTING_STARTED.md) | Conditional Execution Flows | ⚪️ Locked |
-| 7️⃣ | [Final Assembly](./GETTING_STARTED.md) | Orchestrating the Full Pipeline | ⚪️ Locked |
+| 0️⃣ | [Introduction](./GETTING_STARTED.md) | Overview & Agent Roles | 🟢 Done |
+| 1️⃣ | [Setup](./01_SETUP.md) | Environment & Dependencies | 🟢 Done |
+| 2️⃣ | [The Researcher](./02_RESEARCHER.md) | Tools & LlmAgents | ⚪️ Next |
+| 3️⃣ | [The Judge](./03_JUDGE.md) | Structured Output & Evaluation | ⚪️ Locked |
+| 4️⃣ | [Looping Logic](./04_LOOP.md) | Iterative Research & Escalation | ⚪️ Locked |
+| 5️⃣ | [Parallel Formatters](./05_PARALLEL.md) | Multi-channel content generation | ⚪️ Locked |
+| 6️⃣ | [Gatekeepers](./06_GATEKEEPER.md) | Conditional Execution Flows | ⚪️ Locked |
+| 7️⃣ | [Final Assembly](./08_ASSEMBLY.md) | Orchestrating the Full Pipeline | ⚪️ Locked |
+| 8️⃣ | [Refactoring](./09_REFACTOR.md) | Production Architecture & DI | ⚪️ Locked |
 
 ---
 
