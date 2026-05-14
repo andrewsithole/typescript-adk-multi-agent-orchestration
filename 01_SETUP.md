@@ -4,7 +4,7 @@
   <h3>
     <a href="./GETTING_STARTED.md">⬅️ Back: Intro</a> | 
     <b>Step 1: Setup</b> | 
-    <a href="./02_RESEARCHER.md">Next: The Researcher ➡️</a>
+    <a href="./02_THE_RESEARCHER.md">Next: The Researcher ➡️</a>
   </h3>
 </div>
 
@@ -59,5 +59,5 @@ Before starting, ensure that ports **3000** (API) and **5173** (Web) are free. I
 ---
 
 <div align="right">
-  <a href="./02_RESEARCHER.md"><b>Next: Step 2 - The Researcher ➡️</b></a>
+  <a href="./02_THE_RESEARCHER.md"><b>Next: Step 2 - The Researcher ➡️</b></a>
 </div>
