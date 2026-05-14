@@ -12,7 +12,8 @@
     "build:web": "npm --prefix apps/web run build",
     "preview:web": "npm --prefix apps/web run preview",
     "test:judge": "npm --prefix apps/api run test:judge",
-    "test:researcher": "npm --prefix apps/api run test:researcher"
+    "test:researcher": "npm --prefix apps/api run test:researcher",
+    "test:loop": "npm --prefix apps/api run test:loop"
   },
   "type": "module",
   "private": true,

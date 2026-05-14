@@ -8,37 +8,30 @@ import { createLogger } from '../core/logger.js';
 
 const log = createLogger('escalation_checker');
 
+/**
+ * EscalationChecker Agent
+ * 
+ * This is a custom agent that doesn't use an LLM. 
+ * Its only job is to look at the 'judge_output' in the session state.
+ */
 export default class EscalationChecker extends BaseAgent {
     protected async *runAsyncImpl(ctx: InvocationContext) {
-        const lastOutput = ctx.session.state['judge_output'] as
-            | { status?: string; feedback?: string }
-            | undefined;
-
-        log.debug('judge_output from state', {
-            type: typeof lastOutput,
-            value: JSON.stringify(lastOutput),
-            parsedStatus: lastOutput?.status,
-            willEscalate: lastOutput?.status === 'pass',
-        });
-
-        if (lastOutput?.status === 'pass') {
-            // Signal the LoopAgent to exit by setting actions.escalate = true
-            yield createEvent({
-                author: this.name,
-                content: { role: 'model', parts: [{ text: 'Research approved. Moving to content creation.' }] },
-                actions: createEventActions({ escalate: true }),
-            });
-            return;
-        }
-
+        /**
+         * TODO: Step 4 - Implement the Escalation logic.
+         * 
+         * 1. Get 'judge_output' from ctx.session.state.
+         * 2. If status is 'pass', yield an event with 'escalate: true'.
+         *    This signals the LoopAgent to exit.
+         * 3. Otherwise, yield a retry message.
+         */
+        
         yield createEvent({
             author: this.name,
-            content: { role: 'model', parts: [{ text: 'Research failed quality check. Retrying...' }] },
+            content: { role: 'model', parts: [{ text: 'Checker placeholder...' }] },
         });
     }
 
     protected async *runLiveImpl(ctx: InvocationContext) {
-        // Mirror async behavior for live mode
         yield* this.runAsyncImpl(ctx);
     }
 }
