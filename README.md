@@ -3,17 +3,17 @@
 > **🚀 Build the "Hype Squad" Multi-Agent System**  
 > This project is a hands-on Codelab. [**Click here to Start the Tutorial ➡️**](./GETTING_STARTED.md)
 
-| Step | Chapter | Topic | Status |
-| :--- | :--- | :--- | :--- |
-| 0️⃣ | [Introduction](./GETTING_STARTED.md) | Overview & Agent Roles | 🟢 Done |
-| 1️⃣ | [Setup](./01_SETUP.md) | Environment & Dependencies | 🟢 Done |
-| 2️⃣ | [The Researcher](./02_RESEARCHER.md) | Tools & LlmAgents | ⚪️ Next |
-| 3️⃣ | [The Judge](./03_JUDGE.md) | Structured Output & Evaluation | ⚪️ Locked |
-| 4️⃣ | [Looping Logic](./04_LOOP.md) | Iterative Research & Escalation | ⚪️ Locked |
-| 5️⃣ | [Parallel Formatters](./05_PARALLEL.md) | Multi-channel content generation | ⚪️ Locked |
-| 6️⃣ | [Gatekeepers](./06_GATEKEEPER.md) | Conditional Execution Flows | ⚪️ Locked |
-| 7️⃣ | [Final Assembly](./08_ASSEMBLY.md) | Orchestrating the Full Pipeline | ⚪️ Locked |
-| 8️⃣ | [Refactoring](./09_REFACTOR.md) | Production Architecture & DI | ⚪️ Locked |
+| Step | Chapter | Topic |
+| :--- | :--- | :--- |
+| 0️⃣ | [Introduction](./GETTING_STARTED.md) | Overview & Agent Roles |
+| 1️⃣ | [Setup](./01_SETUP.md) | Environment & Dependencies |
+| 2️⃣ | [The Researcher](./02_THE_RESEARCHER.md) | Tools & LlmAgents |
+| 3️⃣ | [The Judge](./03_JUDGE.md) | Structured Output & Evaluation |
+| 4️⃣ | [Looping Logic](./04_LOOP.md) | Iterative Research & Escalation |
+| 5️⃣ | [Parallel Formatters](./05_PARALLEL.md) | Multi-channel content generation |
+| 6️⃣ | [Gatekeepers](./06_GATEKEEPER.md) | Conditional Execution Flows |
+| 7️⃣ | [Final Assembly](./08_ASSEMBLY.md) | Orchestrating the Full Pipeline |
+| 8️⃣ | [Refactoring](./09_REFACTOR.md) | Production Architecture & DI |
 
 ---
 
