@@ -148,5 +148,5 @@ If everything is set up correctly, you should see the research findings printed 
 ---
 
 <div align="right">
-  <a href="./03_JUDGE.md"><b>Next: Step 3 - The Judge ➡️</b></a>
+  <a href="./03_THE_JUDGE.md"><b>Next: Step 3 - The Judge ➡️</b></a>
 </div>

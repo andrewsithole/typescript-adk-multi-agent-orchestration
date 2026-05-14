@@ -8,8 +8,8 @@
 | 0️⃣ | [Introduction](./GETTING_STARTED.md) | Overview & Agent Roles |
 | 1️⃣ | [Setup](./01_SETUP.md) | Environment & Dependencies |
 | 2️⃣ | [The Researcher](./02_THE_RESEARCHER.md) | Tools & LlmAgents |
-| 3️⃣ | [The Judge](./03_JUDGE.md) | Structured Output & Evaluation |
-| 4️⃣ | [Looping Logic](./04_LOOP.md) | Iterative Research & Escalation |
+| 3️⃣ | [The Judge](./03_THE_JUDGE.md) | Structured Output & Evaluation |
+| 4️⃣ | [Looping Logic](./04_THE_RESEARCH_LOOP.md) | Iterative Research & Escalation |
 | 5️⃣ | [Parallel Formatters](./05_PARALLEL.md) | Multi-channel content generation |
 | 6️⃣ | [Gatekeepers](./06_GATEKEEPER.md) | Conditional Execution Flows |
 | 7️⃣ | [Final Assembly](./08_ASSEMBLY.md) | Orchestrating the Full Pipeline |

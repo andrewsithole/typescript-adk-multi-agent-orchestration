@@ -15,8 +15,8 @@
 1.  **[Introduction](#1-introduction)** (Current)
 2.  **[Step 1: Setup](./01_SETUP.md)**
 3.  **[Step 2: The Researcher](./02_THE_RESEARCHER.md)** (Coming soon)
-4.  **[Step 3: The Judge](./03_JUDGE.md)** (Coming soon)
-5.  **[Step 4: Loop Orchestration](./04_LOOP.md)** (Coming soon)
+4.  **[Step 3: The Judge](./03_THE_JUDGE.md)** (Coming soon)
+5.  **[Step 4: Loop Orchestration](./04_THE_RESEARCH_LOOP.md)** (Coming soon)
 6.  **[Step 5: Parallel Formatters](./05_PARALLEL.md)** (Coming soon)
 7.  **[Step 6: The Gatekeeper](./06_GATEKEEPER.md)** (Coming soon)
 8.  **[Step 7: Progress & Feedback](./07_PROGRESS.md)** (Coming soon)

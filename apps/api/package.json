@@ -8,7 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:researcher": "tsx src/test-researcher.ts"
+    "test:researcher": "tsx src/test-researcher.ts",
+    "test:judge": "tsx src/test-judge.ts",
+    "test:loop": "tsx src/test-loop.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
