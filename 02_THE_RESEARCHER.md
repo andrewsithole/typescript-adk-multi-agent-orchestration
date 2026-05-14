@@ -24,7 +24,7 @@ In the `@google/adk` framework, an **Agent** is more than just a prompt. It is a
 
 Think of the **Researcher** as a junior analyst. They aren't supposed to write the final blog post or judge the quality of the work; their only job is to find the best information possible using the tools provided.
 
-![img.png](1-researcher-agent_1920.png)
+![1-researcher-agent_1920.png](1-researcher-agent_1920.png)
 ---
 
 ## 🛠️ The `LlmAgent` Class
