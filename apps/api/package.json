@@ -7,7 +7,8 @@
     "start": "node dist/index.js",
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:researcher": "tsx src/test-researcher.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",

@@ -17,7 +17,7 @@ In this step, you will build your first **Specialist Agent**. Just like a high-p
 In the `@google/adk` framework, an **Agent** is more than just a prompt. It is a self-contained unit that combines:
 1.  **Identity:** A name and description.
 2.  **Instruction:** The "System Prompt" that defines its persona and goals.
-3.  **Tools:** Capabilities that allow it to interact with the world (like Google Search).
+3.  **Tools:** Capabilities that allow it to interact with the world (like Google Search OR custom functions like database/file-system calls).
 4.  **State Awareness:** The ability to read from and write to a shared session memory.
 
 ### The Specialist Analogy
@@ -107,6 +107,43 @@ You might be wondering: *"Why not just ask one LLM to research and write the pos
 3.  **Cost & Speed:** You can use a smaller, faster model for simple tasks and a larger one only for complex reasoning.
 
 > **TODO: Add a diagram comparing a "Monolithic Prompt" (one giant messy box) vs. "Multi-Agent System" (clean, organized pipeline).**
+
+---
+
+## 🎮 Experimentation: Try these tweaks!
+One of the best ways to learn how LLMs behave is to change the instructions and see what happens. Here are a few things you can try:
+
+1.  **The Citation Count:** Change `"3–6 cited URLs"` to `"at least 10 cited URLs"`. Notice how the agent might take longer or become more detailed.
+2.  **The Domain Filter:** Add a constraint like: `"Only use sources from .gov or .edu domains."` to see how it filters results.
+3.  **The Persona:** Change `"expert web researcher"` to `"skeptical investigative journalist"` or `"enthusiastic tech influencer"`. How does the tone of the summary change?
+
+---
+
+## 🧪 Checkpoint: Test Your Agent
+Before we move on to the next agent, let's make sure the Researcher actually works! We've provided a test script that runs the agent in isolation.
+
+### 📝 Action: Run the test
+Run the following command in your terminal from the `apps/api` directory:
+
+```bash
+npm run test:researcher
+```
+
+### 💡 Pro-Tip: Custom Prompts
+You can also pass a custom topic directly from your terminal! Try this:
+
+```bash
+npm run test:researcher -- How does quantum computing work?
+```
+
+*(Note: The `--` is required to pass arguments through npm to the underlying script. You don't even need quotes for multi-word prompts!)*
+
+**What happens?**
+1.  The script loads your `GEMINI_API_KEY`.
+2.  It invokes the `researcher` agent with your query (or a default one).
+3.  The agent uses `google_search` to find facts and returns a summary.
+
+If everything is set up correctly, you should see the research findings printed in your terminal!
 
 ---
 
