@@ -10,7 +10,8 @@
     "start:web": "npm --prefix apps/web run dev",
     "dev:web": "npm --prefix apps/web run dev",
     "build:web": "npm --prefix apps/web run build",
-    "preview:web": "npm --prefix apps/web run preview"
+    "preview:web": "npm --prefix apps/web run preview",
+    "test:researcher": "npm --prefix apps/api run test:researcher"
   },
   "type": "module",
   "private": true,
