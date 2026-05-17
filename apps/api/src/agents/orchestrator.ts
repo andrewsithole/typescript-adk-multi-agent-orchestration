@@ -26,7 +26,16 @@ export const researchLoop = new LoopAgent({
 });
 
 /**
- * Final Pipeline (We will add formatters in Step 5 & 6)
+ * TODO: Step 5 - Implement the Parallel Formatters
+ *
+ * The Formatters should:
+ * 1. Run the LinkedIn agent (theProfessional).
+ * 2. Run the Twitter agent (threadWhiz).
+ * 3. Run both in a ParallelAgent.
+ */
+
+/**
+ * Final Pipeline (We will add the Gatekeeper in Step 6)
  */
 export const hypeSquadCreator = new SequentialAgent({
     name: 'hype_squad',

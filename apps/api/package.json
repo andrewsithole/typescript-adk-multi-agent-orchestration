@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "test:researcher": "tsx src/test-researcher.ts",
     "test:judge": "tsx src/test-judge.ts",
-    "test:loop": "tsx src/test-loop.ts"
+    "test:loop": "tsx src/test-loop.ts",
+    "test:parallel": "tsx src/test-parallel.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",

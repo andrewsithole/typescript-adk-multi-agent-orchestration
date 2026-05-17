@@ -10,10 +10,11 @@
 | 2️⃣ | [The Researcher](./02_THE_RESEARCHER.md) | Tools & LlmAgents |
 | 3️⃣ | [The Judge](./03_THE_JUDGE.md) | Structured Output & Evaluation |
 | 4️⃣ | [Looping Logic](./04_THE_RESEARCH_LOOP.md) | Iterative Research & Escalation |
-| 5️⃣ | [Parallel Formatters](./05_PARALLEL.md) | Multi-channel content generation |
+| 5️⃣ | [Parallel Formatters](./05_PARALLEL_FORMATTERS.md) | Multi-channel content generation |
 | 6️⃣ | [Gatekeepers](./06_GATEKEEPER.md) | Conditional Execution Flows |
-| 7️⃣ | [Final Assembly](./08_ASSEMBLY.md) | Orchestrating the Full Pipeline |
-| 8️⃣ | [Refactoring](./09_REFACTOR.md) | Production Architecture & DI |
+| 7️⃣ | [Progress Wrappers](./07_PROGRESS.md) | Real-time UI Feedback |
+| 8️⃣ | [Final Assembly](./08_ASSEMBLY.md) | Orchestrating the Full Pipeline |
+| 9️⃣ | [Refactoring](./09_REFACTOR.md) | Production Architecture & DI |
 
 ---
 
